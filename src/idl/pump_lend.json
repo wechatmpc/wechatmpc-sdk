@@ -1,0 +1,966 @@
+{
+  "version": "0.1.0",
+  "name": "pump_lend",
+  "instructions": [
+    {
+      "name": "initialize",
+      "docs": [
+        "* ==========================================================================\n     * SYSTEM CONFIG\n     * =========================================================================="
+      ],
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemConfig",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "pumpFunProgram",
+          "type": "publicKey"
+        },
+        {
+          "name": "baseVirtualTokenReserves",
+          "type": "u64"
+        },
+        {
+          "name": "baseVirtualSolReserves",
+          "type": "u64"
+        },
+        {
+          "name": "borrowRatePerSecond",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "updateAuthority",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemConfig",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "newAuthority",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
+      "name": "updatePumpFunProgram",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemConfig",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "newPumpFunProgram",
+          "type": "publicKey"
+        }
+      ]
+    },
+    {
+      "name": "updateBaseVirtualReserves",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemConfig",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "newBaseVirtualTokenReserves",
+          "type": "u64"
+        },
+        {
+          "name": "newBaseVirtualSolReserves",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "updateBorrowRatePerSecond",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "systemConfig",
+          "isMut": true,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "newBorrowRatePerSecond",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "stake",
+      "docs": [
+        "* ==========================================================================\n     * STAKING\n     * =========================================================================="
+      ],
+      "accounts": [
+        {
+          "name": "staker",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "poolStakingData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userStakingData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "poolTokenAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemConfig",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "withdraw",
+      "accounts": [
+        {
+          "name": "staker",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "poolStakingData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userStakingData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "poolTokenAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemConfig",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "shares",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "borrow",
+      "accounts": [
+        {
+          "name": "borrower",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "poolStakingData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userBorrowData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "poolTokenAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "poolTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemConfig",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The mint of the token"
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The token program"
+          ]
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "pumpProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "collateralAmount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "borrowLoopPump",
+      "accounts": [
+        {
+          "name": "borrower",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "poolStakingData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userBorrowData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "poolTokenAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "poolTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemConfig",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The mint of the token"
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The token program"
+          ]
+        },
+        {
+          "name": "bondingCurveAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "pumpProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "collateralAmount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "borrowLoopRaydium",
+      "accounts": [
+        {
+          "name": "borrower",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "poolStakingData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userBorrowData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "poolTokenAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "poolTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemConfig",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The mint of the token"
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The token program"
+          ]
+        },
+        {
+          "name": "bondingCurveAccount",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "raydiumAmmProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "poolWsolAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "wsolTokenMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "pumpProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": [
+        {
+          "name": "collateralAmount",
+          "type": "u64"
+        }
+      ]
+    },
+    {
+      "name": "repay",
+      "accounts": [
+        {
+          "name": "borrower",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "poolStakingData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userBorrowData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "poolTokenAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "poolTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemConfig",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The mint of the token"
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The token program"
+          ]
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "vaultProfit",
+      "accounts": [
+        {
+          "name": "authority",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "poolStakingData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "poolTokenAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemConfig",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "liquidatePump",
+      "docs": [
+        "//  * ==========================================================================\n    //  * LIQUIDATE\n    //  * =========================================================================="
+      ],
+      "accounts": [
+        {
+          "name": "liquidator",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "borrower",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "poolStakingData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userBorrowData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "poolTokenAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "poolTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemConfig",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The mint of the token"
+          ]
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The token program"
+          ]
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "pumpProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    },
+    {
+      "name": "liquidateRaydium",
+      "accounts": [
+        {
+          "name": "liquidator",
+          "isMut": true,
+          "isSigner": true
+        },
+        {
+          "name": "borrower",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "poolStakingData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userBorrowData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "poolTokenAuthority",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "poolTokenAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "poolWsolAccount",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "systemConfig",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "tokenMint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The mint of the token"
+          ]
+        },
+        {
+          "name": "wsolTokenMint",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "tokenProgram",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The token program"
+          ]
+        },
+        {
+          "name": "associatedTokenProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "systemProgram",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "raydiumAmmProgram",
+          "isMut": false,
+          "isSigner": false
+        }
+      ],
+      "args": []
+    }
+  ],
+  "accounts": [
+    {
+      "name": "UserBorrowData",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "collateralAmount",
+            "type": "u64"
+          },
+          {
+            "name": "borrowedAmount",
+            "type": "u64"
+          },
+          {
+            "name": "lastUpdated",
+            "type": "i64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "PoolStakingData",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "totalStaked",
+            "type": "u64"
+          },
+          {
+            "name": "totalShares",
+            "type": "u64"
+          },
+          {
+            "name": "totalBorrowed",
+            "type": "u64"
+          },
+          {
+            "name": "pendingVaultProfit",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "UserStakingData",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "shares",
+            "type": "u64"
+          }
+        ]
+      }
+    },
+    {
+      "name": "SystemConfigData",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          {
+            "name": "initialized",
+            "docs": [
+              "Whether the struct is initialized"
+            ],
+            "type": "bool"
+          },
+          {
+            "name": "authority",
+            "docs": [
+              "The authority of the system"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "poolTokenAuthority",
+            "docs": [
+              "The pool token authority"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "pumpFunProgram",
+            "docs": [
+              "The pump function program address"
+            ],
+            "type": "publicKey"
+          },
+          {
+            "name": "baseVirtualTokenReserves",
+            "docs": [
+              "The base virtual token reserves"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "baseVirtualSolReserves",
+            "docs": [
+              "The base virtual SOL reserves"
+            ],
+            "type": "u64"
+          },
+          {
+            "name": "poolTokenAuthorityBumpSeed",
+            "docs": [
+              "The pool token authority bump seed"
+            ],
+            "type": "u8"
+          },
+          {
+            "name": "borrowRatePerSecond",
+            "docs": [
+              "The borrow rate per second"
+            ],
+            "type": "u64"
+          }
+        ]
+      }
+    }
+  ],
+  "types": [
+    {
+      "name": "BondingCurveStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "NotExist"
+          },
+          {
+            "name": "Active"
+          },
+          {
+            "name": "Closed"
+          }
+        ]
+      }
+    },
+    {
+      "name": "BorrowStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          {
+            "name": "NoBorrow"
+          },
+          {
+            "name": "Active"
+          },
+          {
+            "name": "Liquidation"
+          }
+        ]
+      }
+    }
+  ],
+  "errors": [
+    {
+      "code": 6000,
+      "name": "AlreadyInitialized",
+      "msg": "already initialized"
+    },
+    {
+      "code": 6001,
+      "name": "AuthorityMismatch",
+      "msg": "authority mismatch"
+    },
+    {
+      "code": 6002,
+      "name": "InsufficientShares",
+      "msg": "insufficient shares"
+    },
+    {
+      "code": 6003,
+      "name": "InsufficientLiquidity",
+      "msg": "insufficient liquidity"
+    },
+    {
+      "code": 6004,
+      "name": "BorrowLimitReached",
+      "msg": "borrow limit reached"
+    },
+    {
+      "code": 6005,
+      "name": "InvalidPumpToken",
+      "msg": "invalid pump token"
+    },
+    {
+      "code": 6006,
+      "name": "MathOverflow",
+      "msg": "math overflow"
+    },
+    {
+      "code": 6007,
+      "name": "BondingCurveNotActive",
+      "msg": "bonding curve not active"
+    },
+    {
+      "code": 6008,
+      "name": "BondingCurveNotClosed",
+      "msg": "bonding curve not closed"
+    },
+    {
+      "code": 6009,
+      "name": "BondingCurveNotExist",
+      "msg": "bonding curve not exist"
+    },
+    {
+      "code": 6010,
+      "name": "InvalidAmount",
+      "msg": "invalid amount"
+    },
+    {
+      "code": 6011,
+      "name": "BorrowLiquidation",
+      "msg": "borrow liquidation"
+    },
+    {
+      "code": 6012,
+      "name": "InvalidPoolTokenAuthority",
+      "msg": "invalid pool token authority"
+    }
+  ]
+}
