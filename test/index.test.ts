@@ -32,9 +32,15 @@ const connection = new Connection('https://api.devnet.solana.com');
 jest.setTimeout(36000000)
 
 test("🍺 Test Pumplend SDK", async () => {
+  const testUser = new PublicKey("AmRqRwRAZzesXSWbXbdifDAWAytVmQJoYBzhWCynGCuR");
+
   let lend = new Pumplend()
 
   console.log(
-    "Get user stake data ::",await lend.tryGetUserStakingData(connection,new PublicKey("AmRqRwRAZzesXSWbXbdifDAWAytVmQJoYBzhWCynGCuR"))
+    "Get some data ::",
+    await lend.tryGetUserStakingData(connection,testUser),
+    await lend.tryGetSystemConfigData(connection),
+    await lend.tryGetPoolStakingData(connection),
+    lend.tryGetUserAccounts(testUser),
   )
 })
