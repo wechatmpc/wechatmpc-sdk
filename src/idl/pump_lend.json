@@ -143,6 +143,11 @@
           "isSigner": true
         },
         {
+          "name": "referrer",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
           "name": "poolStakingData",
           "isMut": true,
           "isSigner": false
@@ -184,6 +189,11 @@
           "isSigner": true
         },
         {
+          "name": "referrer",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "poolStakingData",
           "isMut": true,
           "isSigner": false
@@ -223,6 +233,16 @@
           "name": "borrower",
           "isMut": true,
           "isSigner": true
+        },
+        {
+          "name": "referrer",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
         },
         {
           "name": "poolStakingData",
@@ -300,6 +320,16 @@
           "name": "borrower",
           "isMut": true,
           "isSigner": true
+        },
+        {
+          "name": "referrer",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
         },
         {
           "name": "poolStakingData",
@@ -382,6 +412,16 @@
           "name": "borrower",
           "isMut": true,
           "isSigner": true
+        },
+        {
+          "name": "referrer",
+          "isMut": false,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
         },
         {
           "name": "poolStakingData",
@@ -481,6 +521,11 @@
           "isSigner": true
         },
         {
+          "name": "referrer",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "poolStakingData",
           "isMut": true,
           "isSigner": false
@@ -540,15 +585,25 @@
       "args": []
     },
     {
-      "name": "vaultProfit",
+      "name": "increaseCollateral",
       "accounts": [
         {
-          "name": "authority",
+          "name": "borrower",
           "isMut": true,
           "isSigner": true
         },
         {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
           "name": "poolStakingData",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "userBorrowData",
           "isMut": true,
           "isSigner": false
         },
@@ -563,12 +618,25 @@
           "isSigner": false
         },
         {
+          "name": "tokenMint",
+          "isMut": false,
+          "isSigner": false,
+          "docs": [
+            "The mint of the token"
+          ]
+        },
+        {
           "name": "systemProgram",
           "isMut": false,
           "isSigner": false
         }
       ],
-      "args": []
+      "args": [
+        {
+          "name": "collateralAmount",
+          "type": "u64"
+        }
+      ]
     },
     {
       "name": "liquidatePump",
@@ -580,6 +648,16 @@
           "name": "liquidator",
           "isMut": true,
           "isSigner": true
+        },
+        {
+          "name": "referrer",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
         },
         {
           "name": "borrower",
@@ -657,6 +735,16 @@
           "name": "liquidator",
           "isMut": true,
           "isSigner": true
+        },
+        {
+          "name": "referrer",
+          "isMut": true,
+          "isSigner": false
+        },
+        {
+          "name": "vault",
+          "isMut": true,
+          "isSigner": false
         },
         {
           "name": "borrower",
@@ -749,8 +837,16 @@
             "type": "u64"
           },
           {
+            "name": "depositSolAmount",
+            "type": "u64"
+          },
+          {
             "name": "borrowedAmount",
             "type": "u64"
+          },
+          {
+            "name": "referrer",
+            "type": "publicKey"
           },
           {
             "name": "lastUpdated",
@@ -791,6 +887,10 @@
           {
             "name": "shares",
             "type": "u64"
+          },
+          {
+            "name": "referrer",
+            "type": "publicKey"
           }
         ]
       }
@@ -819,6 +919,10 @@
             "docs": [
               "The pool token authority"
             ],
+            "type": "publicKey"
+          },
+          {
+            "name": "vault",
             "type": "publicKey"
           },
           {
@@ -961,6 +1065,16 @@
       "code": 6012,
       "name": "InvalidPoolTokenAuthority",
       "msg": "invalid pool token authority"
+    },
+    {
+      "code": 6013,
+      "name": "InvalidReffererPublicKey",
+      "msg": "invalid refferer publickey"
+    },
+    {
+      "code": 6014,
+      "name": "InvalidVaultPublicKey",
+      "msg": "invalid vault publickey"
     }
   ]
 }
