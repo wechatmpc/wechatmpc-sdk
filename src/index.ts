@@ -82,7 +82,8 @@ export class Pumplend {
   pumpLendProgramId = new PublicKey("6m6ixFjRGq7HYAPsu8YtyEauJm8EE8pzA3mqESt5cGYf");
   pumpLendVault = new PublicKey("zzntY4AtoZhQE8UnfUoiR4HKK2iv8wjW4fHVTCzKnn6")
   pumpfunProgramId = new PublicKey("6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P");
-  public constructor(pumpLendProgramId?:PublicKey,pumpfunProgramId?:PublicKey,pumpLendVault?:PublicKey) {
+  network = "mainnet"
+  public constructor(network ?: string,pumpLendProgramId?:PublicKey,pumpfunProgramId?:PublicKey,pumpLendVault?:PublicKey) {
     if(pumpLendProgramId)
     {
       this.pumpLendProgramId = pumpLendProgramId
@@ -95,6 +96,10 @@ export class Pumplend {
     if(pumpLendVault)
     {
       this.pumpLendVault = pumpLendVault
+    }
+    if(network)
+    {
+      this.network = network;
     }
       return this;
   }
@@ -348,9 +353,13 @@ public tryGetPumpTokenDataAccount(token:PublicKey)
   );
   
     const mint = token;
-    const feeRecipient = new PublicKey("68yFSZxzLWJXkxxRGydZ63C6mHx1NLEDWmwN9Lb5yySg");
-  
-    const global = new PublicKey("4wTV1YmiEkRvAtNtsSGPtUrqRYQMe5SKy2uB4Jjaxnjf");
+    let feeRecipient = new PublicKey("CebN5WGQ4jvEPvsVU4EoHEpgzq1VV7AbicfhtW4xC9iM"); //Devnet
+    if(this.network == "mainnet")
+      {
+        feeRecipient = new PublicKey("CebN5WGQ4jvEPvsVU4EoHEpgzq1VV7AbicfhtW4xC9iM"); //Mainnet
+      }
+    let global = new PublicKey("4wTV1YmiEkRvAtNtsSGPtUrqRYQMe5SKy2uB4Jjaxnjf");
+
     const rent = new PublicKey("SysvarRent111111111111111111111111111111111");
     const eventAuthority = new PublicKey("Ce6TQqeHC9p8KetsN6JsjHK7UTZk7nasjjnr7XxXp9F1");
   
@@ -794,6 +803,21 @@ public async pump_buy( token:PublicKey , user:PublicKey ,amount:number,maxSolCos
               new Uint8Array(sighash("global","buy")),
               buyBuffer
           ]
+      )
+      console.log(
+        "Accounts ::",
+        tokenPumpAccounts.global,
+        tokenPumpAccounts.feeRecipient,
+        tokenPumpAccounts.mint,
+        tokenPumpAccounts.bondingCurve,
+        tokenPumpAccounts.associatedBondingCurve,
+        associatedUser,
+        user,
+        SystemProgram.programId,
+        TOKEN_PROGRAM_ID,
+        tokenPumpAccounts.rent,
+        tokenPumpAccounts.eventAuthority,
+        this.pumpfunProgramId
       )
         const instruction = new TransactionInstruction({
           keys: [
