@@ -59,6 +59,24 @@ const BaseArgsSchema = new Map([
 ]);
 
 
+class PumpBuyArgs extends Struct {
+  amount: BN;
+  maxSolCost : BN;
+  constructor(fields: { amount: BN , maxSolCost : BN }) {
+      super(fields);
+      this.amount = fields.amount;
+      this.maxSolCost = fields.maxSolCost;
+  }
+}
+const PumpBuyArgsSchema = new Map([
+  [PumpBuyArgs, { kind: "struct", fields: [
+    ["amount", "u64"],
+    ["maxSolCost","u64"]
+  ] }]
+]);
+
+
+
 //Major pumplend class
 export class Pumplend {
   pumpLendProgramId = new PublicKey("6m6ixFjRGq7HYAPsu8YtyEauJm8EE8pzA3mqESt5cGYf");
@@ -762,5 +780,98 @@ public async close_pump( token:PublicKey , user:PublicKey ,referral ?:PublicKey)
 /**
  * Pumpfun base function
  */
+public async pump_buy( token:PublicKey , user:PublicKey ,amount:number,maxSolCost:number )
+{
+  try {
+    const tokenPumpAccounts = this.tryGetPumpTokenDataAccount(token)
+    const associatedUser = getAssociatedTokenAddressSync(token, user);
+
+    const args = new PumpBuyArgs({ amount: new BN(amount)  ,maxSolCost:new BN(maxSolCost) });
+    const buyBuffer = serialize(PumpBuyArgsSchema, args);
+
+      const data = Buffer.concat(
+          [
+              new Uint8Array(sighash("global","buy")),
+              buyBuffer
+          ]
+      )
+        const instruction = new TransactionInstruction({
+          keys: [
+              { pubkey: tokenPumpAccounts.global, isSigner: false, isWritable: false },
+              { pubkey: tokenPumpAccounts.feeRecipient, isSigner: false, isWritable: true },
+              { pubkey: tokenPumpAccounts.mint, isSigner: false, isWritable: true },
+              { pubkey: tokenPumpAccounts.bondingCurve, isSigner: false, isWritable: true },
+              { pubkey: tokenPumpAccounts.associatedBondingCurve, isSigner: false, isWritable: true },
+              { pubkey: associatedUser, isSigner: false, isWritable: true },
+              { pubkey: user, isSigner: true, isWritable: true },
+              { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+              { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+              { pubkey: tokenPumpAccounts.rent, isSigner: false, isWritable: false },
+              { pubkey: tokenPumpAccounts.eventAuthority, isSigner: false, isWritable: false },
+              { pubkey: this.pumpfunProgramId, isSigner: false, isWritable: true },
+
+            ],
+          programId: this.pumpfunProgramId,
+          data: data
+      });
+
+      const transaction = new Transaction().add(instruction);
+      transaction.feePayer = user;
+
+      return transaction;
+
+      
+      } catch (err: any) {
+        console.error('Error fetching system config data:', err);
+        return false;
+      }
+}
+
+public async pump_sell( token:PublicKey , user:PublicKey ,minSolOut:number,amount:number )
+{
+  try {
+    const tokenPumpAccounts = this.tryGetPumpTokenDataAccount(token)
+    const associatedUser = getAssociatedTokenAddressSync(token, user);
+
+    const args = new PumpBuyArgs({ amount: new BN(minSolOut)  ,maxSolCost:new BN(amount) });
+    const buyBuffer = serialize(PumpBuyArgsSchema, args);
+
+      const data = Buffer.concat(
+          [
+              new Uint8Array(sighash("global","sell")),
+              buyBuffer
+          ]
+      )
+        const instruction = new TransactionInstruction({
+          keys: [
+              { pubkey: tokenPumpAccounts.global, isSigner: false, isWritable: false },
+              { pubkey: tokenPumpAccounts.feeRecipient, isSigner: false, isWritable: true },
+              { pubkey: tokenPumpAccounts.mint, isSigner: false, isWritable: true },
+              { pubkey: tokenPumpAccounts.bondingCurve, isSigner: false, isWritable: true },
+              { pubkey: tokenPumpAccounts.associatedBondingCurve, isSigner: false, isWritable: true },
+              { pubkey: associatedUser, isSigner: false, isWritable: true },
+              { pubkey: user, isSigner: true, isWritable: true },
+              { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+              { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+              { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+              { pubkey: tokenPumpAccounts.rent, isSigner: false, isWritable: false },
+              { pubkey: tokenPumpAccounts.eventAuthority, isSigner: false, isWritable: false },
+              { pubkey: this.pumpfunProgramId, isSigner: false, isWritable: true },
+
+            ],
+          programId: this.pumpfunProgramId,
+          data: data
+      });
+      const transaction = new Transaction().add(instruction);
+      transaction.feePayer = user;
+
+      return transaction;
+
+      
+      } catch (err: any) {
+        console.error('Error fetching system config data:', err);
+        return false;
+      }
+}
 
 }
