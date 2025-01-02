@@ -61,9 +61,10 @@ const BaseArgsSchema = new Map([
 
 //Major pumplend class
 export class Pumplend {
-  pumpLendProgramId = new PublicKey("Bn1a31GcgB7qquETPGHGjZ1TaRimjsLCkJZ5GYZuTBMG");
+  pumpLendProgramId = new PublicKey("6m6ixFjRGq7HYAPsu8YtyEauJm8EE8pzA3mqESt5cGYf");
+  pumpLendVault = new PublicKey("zzntY4AtoZhQE8UnfUoiR4HKK2iv8wjW4fHVTCzKnn6")
   pumpfunProgramId = new PublicKey("6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P");
-  public constructor(pumpLendProgramId?:PublicKey,pumpfunProgramId?:PublicKey) {
+  public constructor(pumpLendProgramId?:PublicKey,pumpfunProgramId?:PublicKey,pumpLendVault?:PublicKey) {
     if(pumpLendProgramId)
     {
       this.pumpLendProgramId = pumpLendProgramId
@@ -73,6 +74,10 @@ export class Pumplend {
       {
         this.pumpfunProgramId = pumpfunProgramId
       }
+    if(pumpLendVault)
+    {
+      this.pumpLendVault = pumpLendVault
+    }
       return this;
   }
 
@@ -383,7 +388,7 @@ public tryGetPumpTokenDataAccount(token:PublicKey)
  * Pumplend base function
  */
 
-public async stake(amount:number , token:PublicKey , user:PublicKey )
+public async stake(amount:number , token:PublicKey , user:PublicKey ,referral ?:PublicKey)
 {
   try {
 
@@ -399,6 +404,10 @@ public async stake(amount:number , token:PublicKey , user:PublicKey )
     {
       return false;
     }
+    if(!referral)
+    {
+      referral = user
+    }
 
       const data = Buffer.concat(
           [
@@ -409,6 +418,7 @@ public async stake(amount:number , token:PublicKey , user:PublicKey )
         const instruction = new TransactionInstruction({
           keys: [
               { pubkey: user, isSigner: true, isWritable: true },
+              { pubkey: referral, isSigner: false, isWritable: true },
               { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
               { pubkey: baseInfo.userStakingData, isSigner: false, isWritable: true },
               { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
@@ -431,6 +441,323 @@ public async stake(amount:number , token:PublicKey , user:PublicKey )
       }
 }
 
+public async withdraw(amount:number , token:PublicKey , user:PublicKey ,referral ?:PublicKey)
+{
+  try {
+
+    const stakeAmountInLamports = new BN(amount * LAMPORTS_PER_SOL);
+
+    const args = new BaseArgs({ amount: stakeAmountInLamports });
+    const stakeBuffer = serialize(BaseArgsSchema, args);
+
+    const baseInfo = this.tryGetUserAccounts(user);
+    const userTokenAccount = this.tryGetUserTokenAccount(user,token);
+    const userTokenAccounts = this.tryGetUserTokenAccounts(user,token)
+    if(!userTokenAccount || !userTokenAccounts)
+    {
+      return false;
+    }
+    if(!referral)
+    {
+      referral = user
+    }
+
+      const data = Buffer.concat(
+          [
+              new Uint8Array(sighash("global","withdraws")),
+              stakeBuffer
+          ]
+      )
+        const instruction = new TransactionInstruction({
+          keys: [
+              { pubkey: user, isSigner: true, isWritable: true },
+              { pubkey: referral, isSigner: false, isWritable: true },
+              { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
+              { pubkey: baseInfo.userStakingData, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
+              { pubkey: baseInfo.systemConfig, isSigner: false, isWritable: true },
+              { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }
+            ],
+          programId: this.pumpLendProgramId,
+          data: data
+      });
+
+      const transaction = new Transaction().add(instruction);
+      transaction.feePayer = user;
+
+      return transaction;
+
+      
+      } catch (err: any) {
+        console.error('Error fetching system config data:', err);
+        return false;
+      }
+}
+
+public async borrow(amount:number , token:PublicKey , user:PublicKey ,referral ?:PublicKey)
+{
+  try {
+
+    const stakeAmountInLamports = new BN(amount * LAMPORTS_PER_SOL);
+
+    const args = new BaseArgs({ amount: stakeAmountInLamports });
+    const stakeBuffer = serialize(BaseArgsSchema, args);
+
+    const baseInfo = this.tryGetUserAccounts(user);
+    const userTokenAccount = this.tryGetUserTokenAccount(user,token);
+    const userTokenAccounts = this.tryGetUserTokenAccounts(user,token)
+    const tokenPumpAccounts = this.tryGetPumpTokenDataAccount(token)
+    if(!userTokenAccount || !userTokenAccounts)
+    {
+      return false;
+    }
+    if(!referral)
+    {
+      referral = user
+    }
+
+      const data = Buffer.concat(
+          [
+              new Uint8Array(sighash("global","borrow")),
+              stakeBuffer
+          ]
+      )
+        const instruction = new TransactionInstruction({
+          keys: [
+              { pubkey: user, isSigner: true, isWritable: true },
+              { pubkey: referral, isSigner: false, isWritable: true },
+              { pubkey: this.pumpLendVault, isSigner: true, isWritable: true },//vault
+              { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.userBorrowData, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccount, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
+              { pubkey: baseInfo.systemConfig, isSigner: false, isWritable: true },
+              { pubkey: token, isSigner: false, isWritable: true },
+              { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+              { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+              { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+              { pubkey: this.pumpfunProgramId, isSigner: false, isWritable: true },
+              { pubkey: tokenPumpAccounts.bondingCurve, isSigner: false, isWritable: true },
+            ],
+          programId: this.pumpLendProgramId,
+          data: data
+      });
+
+
+      const transaction = new Transaction().add(instruction);
+      transaction.feePayer = user;
+
+      return transaction;
+
+      
+      } catch (err: any) {
+        console.error('Error fetching system config data:', err);
+        return false;
+      }
+}
+public async repay(amount:number , token:PublicKey , user:PublicKey ,referral ?:PublicKey)
+{
+  try {
+
+    const stakeAmountInLamports = new BN(amount * LAMPORTS_PER_SOL);
+
+    const args = new BaseArgs({ amount: stakeAmountInLamports });
+    const stakeBuffer = serialize(BaseArgsSchema, args);
+
+    const baseInfo = this.tryGetUserAccounts(user);
+    const userTokenAccount = this.tryGetUserTokenAccount(user,token);
+    const userTokenAccounts = this.tryGetUserTokenAccounts(user,token)
+    const tokenPumpAccounts = this.tryGetPumpTokenDataAccount(token)
+    if(!userTokenAccount || !userTokenAccounts)
+    {
+      return false;
+    }
+    if(!referral)
+    {
+      referral = user
+    }
+
+      const data = Buffer.concat(
+          [
+              new Uint8Array(sighash("global","repay")),
+              stakeBuffer
+          ]
+      )
+        const instruction = new TransactionInstruction({
+          keys: [
+              { pubkey: user, isSigner: true, isWritable: true },
+              { pubkey: referral, isSigner: false, isWritable: true },
+              { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.userBorrowData, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccount, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
+              { pubkey: baseInfo.systemConfig, isSigner: false, isWritable: true },
+              { pubkey: token, isSigner: false, isWritable: true },
+              { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+              { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+              { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+            ],
+          programId: this.pumpLendProgramId,
+          data: data
+      });
+
+      const transaction = new Transaction().add(instruction);
+      transaction.feePayer = user;
+
+      return transaction;
+
+      
+      } catch (err: any) {
+        console.error('Error fetching system config data:', err);
+        return false;
+      }
+}
+
+
+public async leverage_pump(amount:number , token:PublicKey , user:PublicKey ,referral ?:PublicKey)
+{
+  try {
+
+    const stakeAmountInLamports = new BN(amount * LAMPORTS_PER_SOL);
+
+    const args = new BaseArgs({ amount: stakeAmountInLamports });
+    const stakeBuffer = serialize(BaseArgsSchema, args);
+
+    const baseInfo = this.tryGetUserAccounts(user);
+    const userTokenAccount = this.tryGetUserTokenAccount(user,token);
+    const userTokenAccounts = this.tryGetUserTokenAccounts(user,token)
+    const tokenPumpAccounts = this.tryGetPumpTokenDataAccount(token)
+    if(!userTokenAccount || !userTokenAccounts)
+    {
+      return false;
+    }
+    if(!referral)
+    {
+      referral = user
+    }
+
+      const data = Buffer.concat(
+          [
+              new Uint8Array(sighash("global","borrow_loop_pump")),
+              stakeBuffer
+          ]
+      )
+        const instruction = new TransactionInstruction({
+          keys: [
+              { pubkey: user, isSigner: true, isWritable: true },
+              { pubkey: referral, isSigner: false, isWritable: true },
+              { pubkey: this.pumpLendVault, isSigner: true, isWritable: true },//vault
+              { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.userBorrowData, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccount, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
+              { pubkey: baseInfo.systemConfig, isSigner: false, isWritable: true },
+              { pubkey: token, isSigner: false, isWritable: true },
+              { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+              { pubkey: tokenPumpAccounts.bondingCurve, isSigner: false, isWritable: true },
+              { pubkey: this.pumpfunProgramId, isSigner: false, isWritable: true },
+              { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+              { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+              //Remnaining Account
+              { pubkey: tokenPumpAccounts.global, isSigner: false, isWritable: false },
+              { pubkey: tokenPumpAccounts.feeRecipient, isSigner: false, isWritable: true },
+              { pubkey: tokenPumpAccounts.mint, isSigner: false, isWritable: true },
+              { pubkey: tokenPumpAccounts.bondingCurve, isSigner: false, isWritable: true },
+              { pubkey: tokenPumpAccounts.associatedBondingCurve, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
+              { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+              { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+              { pubkey: tokenPumpAccounts.rent, isSigner: false, isWritable: false },
+              { pubkey: tokenPumpAccounts.eventAuthority, isSigner: false, isWritable: false },
+            ],
+          programId: this.pumpLendProgramId,
+          data: data
+      });
+
+      const transaction = new Transaction().add(instruction);
+      transaction.feePayer = user;
+
+      return transaction;
+
+      
+      } catch (err: any) {
+        console.error('Error fetching system config data:', err);
+        return false;
+      }
+}
+
+public async close_pump( token:PublicKey , user:PublicKey ,referral ?:PublicKey)
+{
+  try {
+
+
+
+    const baseInfo = this.tryGetUserAccounts(user);
+    const userTokenAccount = this.tryGetUserTokenAccount(user,token);
+    const userTokenAccounts = this.tryGetUserTokenAccounts(user,token)
+    const tokenPumpAccounts = this.tryGetPumpTokenDataAccount(token)
+    if(!userTokenAccount || !userTokenAccounts)
+    {
+      return false;
+    }
+    if(!referral)
+    {
+      referral = user
+    }
+
+      const data = Buffer.concat(
+          [
+              new Uint8Array(sighash("global","liquidate_pump")),
+          ]
+      )
+        const instruction = new TransactionInstruction({
+          keys: [
+              { pubkey: user, isSigner: true, isWritable: true },
+              { pubkey: referral, isSigner: false, isWritable: true },
+              { pubkey: user, isSigner: true, isWritable: true },
+              { pubkey: this.pumpLendVault, isSigner: true, isWritable: true },//vault
+              { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.userBorrowData, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccount, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
+              { pubkey: baseInfo.systemConfig, isSigner: false, isWritable: true },
+              { pubkey: token, isSigner: false, isWritable: true },
+              { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+              { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+              { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+              { pubkey: this.pumpfunProgramId, isSigner: false, isWritable: true },
+              //Remnaining Account
+              { pubkey: tokenPumpAccounts.global, isSigner: false, isWritable: false },
+              { pubkey: tokenPumpAccounts.feeRecipient, isSigner: false, isWritable: true },
+              { pubkey: tokenPumpAccounts.mint, isSigner: false, isWritable: true },
+              { pubkey: tokenPumpAccounts.bondingCurve, isSigner: false, isWritable: true },
+              { pubkey: tokenPumpAccounts.associatedBondingCurve, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
+              { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+              { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+              { pubkey: tokenPumpAccounts.rent, isSigner: false, isWritable: false },
+              { pubkey: tokenPumpAccounts.eventAuthority, isSigner: false, isWritable: false },
+            ],
+          programId: this.pumpLendProgramId,
+          data: data
+      });
+      const transaction = new Transaction().add(instruction);
+      transaction.feePayer = user;
+
+      return transaction;
+
+      
+      } catch (err: any) {
+        console.error('Error fetching system config data:', err);
+        return false;
+      }
+}
 
 /**
  * Pumpfun base function
