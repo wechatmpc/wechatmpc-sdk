@@ -14,10 +14,12 @@
   "author": "wikig",
   "license": "LicenseRef-LICENSE",
   "dependencies": {
-		"@solana/spl-token": "^0.4.9",
-		"@solana/web3.js": "^1.95.8",
+    "@solana/spl-token": "^0.4.9",
+    "@solana/web3.js": "^1.95.8",
     "bn.js": "^5.2.1",
     "borsh": "^0.7.0",
+    "bs58": "^6.0.0",
+    "dotenv": "^16.4.7",
     "libsodium": "^0.7.11",
     "libsodium-wrappers-sumo": "^0.7.11"
   },

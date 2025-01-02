@@ -26,14 +26,21 @@ createAssociatedTokenAccountInstruction
 
 } from "@solana/spl-token";
 
+import * as dotenv from 'dotenv';
+dotenv.config();
 
+import bs58 from 'bs58'
 const connection = new Connection('https://api.devnet.solana.com');
 //init
 jest.setTimeout(36000000)
 
-test("🍺 Test Pumplend SDK", async () => {
-  const testUser = new PublicKey("AmRqRwRAZzesXSWbXbdifDAWAytVmQJoYBzhWCynGCuR");
 
+const sk = process.env.SK?process.env.SK:"";
+const kp = Keypair.fromSecretKey(bs58.decode(sk));
+const testUser = kp.publicKey;
+
+test("🍺 Test Pumplend SDK", async () => {
+  console.log("Test User ::",testUser)
   let lend = new Pumplend()
 
   console.log(
