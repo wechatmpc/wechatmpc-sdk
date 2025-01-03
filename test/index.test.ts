@@ -50,8 +50,10 @@ const testControl = {
   pumplendStake:false,
   pumplendWithdraw:false,
   pumplendBorrow : false,
-  pumplendRepay : true,
-  pumplendCloseInPump : true
+  pumplendRepay : false,
+  pumplendCloseInPump : true,
+  pumplendMaxBorrowCul:true,
+  pumplendMaxLeverageCul:true
 }
 
 
@@ -294,6 +296,47 @@ test("🍺 Test Pumplend Repay", async () => {
         console.log(repayTx)
       }
 
+  }else{
+    console.info("⚠Test Module Off")
+  }
+})
+
+test("🍺 Test Max Borrow", async () => {
+  if(testControl.pumplendMaxBorrowCul)
+  {
+    let lend = new Pumplend()
+    const borrowData =  await lend.tryGetUserBorrowData(connection,devnetToken,kp.publicKey);
+    console.log("borrowData",borrowData)
+    console.log(
+      "Max Borrow ::",lend.pumplend_culcuate_max_borrow(
+        borrowData
+       ,
+        1e16
+        ,
+        await lend.tryGetPoolStakingData(connection)
+      )
+    )
+  }else{
+    console.info("⚠Test Module Off")
+  }
+})
+
+test("🍺 Test Max Leverage", async () => {
+  if(testControl.pumplendMaxLeverageCul)
+  {
+    let lend = new Pumplend()
+    const borrowData =  await lend.tryGetUserBorrowData(connection,devnetToken,kp.publicKey);
+    const curve = await lend.tryGetPumpTokenCurveData(mainnet,mainnetToken)
+    console.log("borrowData",borrowData)
+    console.log(
+      "Max Leverage ::",lend.pumplend_culcuate_max_leverage(
+        borrowData
+       ,
+        1e9
+        ,
+        curve
+      )
+    )
   }else{
     console.info("⚠Test Module Off")
   }

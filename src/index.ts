@@ -37,6 +37,9 @@ import { serialize } from "borsh";
 // @ts-ignore
 import BN from 'bn.js';
 
+//Setting 
+const curveBaseToken = BigInt('1073000000000000')
+const curveBaseSol = BigInt('30000000000')
 
 //Utils
 function sighash(namespace: string, name: string): Buffer {
@@ -45,6 +48,74 @@ function sighash(namespace: string, name: string): Buffer {
   hash.update(preimage);
   const fullHash = hash.digest(); 
   return fullHash.slice(0, 8);  
+}
+
+function sqrtBigInt(value: bigint): bigint {
+  if (value < BigInt(0)) {
+    throw new Error("Cannot calculate square root of a negative number");
+  }
+
+  let x = value;
+  let y = (x + BigInt(1)) / BigInt(2);
+
+  while (y < x) {
+    x = y;
+    y = (x + value / x) / BigInt(2);
+  }
+
+  return x;
+}
+
+
+type Reserves = {
+  solReserves: bigint;
+  tokenReserves: bigint;
+};
+
+function getMaxBorrowAmountByAMM(
+  reserves: Reserves,
+  baseVirtualSolReserves: bigint,
+  baseVirtualTokenReserves: bigint,
+  collateralAmount: bigint,
+  remaining_collateral_amount:bigint
+) {
+  console.log("🚀 getMaxBorrowAmountByAMM ::",reserves,baseVirtualSolReserves,baseVirtualTokenReserves,collateralAmount,remaining_collateral_amount)
+  try {
+    const x0 = BigInt(baseVirtualSolReserves);
+    const y0 = BigInt(baseVirtualTokenReserves);
+    const x1 = BigInt(reserves.solReserves);
+    const y1 = BigInt(reserves.tokenReserves);
+    const k = BigInt(collateralAmount) - BigInt(remaining_collateral_amount);
+
+    const a = ((y1 - y0) * BigInt(7)) / BigInt(10);
+    const b =
+      ((x0 * y1 * BigInt(7)) / BigInt(10)) - x1 * y0 + k * y1 - k * y0;
+    const c = k * x0 * y1;
+
+    const b_4ac = b * b - a * c * BigInt(4);
+
+    if (b_4ac < BigInt(0)) {
+      throw new Error("MathOverflow: Negative square root");
+    }
+
+    const b_4ac_sqrt = sqrtBigInt(b_4ac);
+
+    const xn = (-b - b_4ac_sqrt) / (a * BigInt(2));
+    const yn = y1 - (x1 * y1) / (x1 + xn);
+
+    if (xn < BigInt(0) || yn < BigInt(0)) {
+      throw new Error("MathOverflow: Resulting values are negative");
+    }
+
+    return {
+      sol:xn, 
+      token:yn
+    };
+  } catch (error) {
+    console.error("Error calculating max borrow amount:", error);
+    // return new Error("MathError: Unable to calculate borrow amount");
+    return false;
+  }
 }
 
 //Args class
@@ -911,6 +982,88 @@ public txTips( tx:Transaction , simulate:any , tips : number = 500 ,unitPrice:nu
     }),
   );
   return tx;
+}
+
+public pumplend_culcuate_max_borrow(userBorrowDataDetails:any,amount:number ,stakeStatus?:any )
+{
+ 
+  if(!userBorrowDataDetails || !userBorrowDataDetails?.collateralAmount || !userBorrowDataDetails?.borrowedAmount)
+  {
+    userBorrowDataDetails = {
+      collateralAmount:BigInt(0),
+      borrowedAmount:BigInt(0),
+    }
+  }
+  let newBorrowToken = BigInt(amount);
+
+  let borrowedToken =userBorrowDataDetails.collateralAmount;
+  let borrowedSol =userBorrowDataDetails.borrowedAmount; 
+  const newToken = borrowedToken+curveBaseToken;
+  const newSol = borrowedSol+curveBaseSol;
+  const dSol = newSol-((newSol*newToken)/(newToken+newBorrowToken))
+  let ret =  Number((Number(dSol)*0.7).toFixed(0));
+  if(stakeStatus && ret>(stakeStatus.totalStaked -stakeStatus.totalBorrowed ))
+  {
+    ret = Number(Number(stakeStatus.totalStaked -stakeStatus.totalBorrowed).toFixed(0))
+  }
+
+  return ret;
+}
+
+public pumplend_culcuate_max_leverage(userBorrowDataDetails:any,amount:number,curve:any)
+{
+  
+  console.log(curve)
+
+  if(!userBorrowDataDetails || !userBorrowDataDetails?.collateralAmount || !userBorrowDataDetails?.borrowedAmount)
+    {
+      userBorrowDataDetails = {
+        collateralAmount:BigInt(0),
+        borrowedAmount:BigInt(0),
+      }
+    }
+
+    if(!curve || !curve?.virtualSolReserves || !curve?.virtualTokenReserves)
+      {
+        curve = {
+          solReserves:BigInt(0),
+          tokenReserves:BigInt(0),
+        }
+      }else{
+        curve = {
+          solReserves:curve.virtualSolReserves,
+          tokenReserves:curve.virtualTokenReserves,
+        }
+      }
+  console.log(curve)
+      
+  let newBorrowSol = BigInt(amount);
+
+  let borrowedToken = BigInt(0);
+  let borrowedSol = BigInt(0); 
+  try{
+    if(userBorrowDataDetails)
+    {
+      borrowedToken = userBorrowDataDetails.collateralAmount;
+      borrowedSol = userBorrowDataDetails.borrowedAmount;
+    }
+  }catch(e)
+  {
+
+  }
+  const newToken = borrowedToken+curveBaseToken;
+  const newSol = borrowedSol+curveBaseSol;
+  const dToken = getMaxBorrowAmountByAMM(
+    {
+      solReserves:curve.solReserves,
+      tokenReserves:curve.tokenReserves,
+    },
+    newSol,
+    newToken,
+    newBorrowSol,
+    BigInt(amount*0.1)
+  )
+  return dToken;
 }
 
 }
