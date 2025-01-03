@@ -40,6 +40,10 @@
         {
           "name": "borrowRatePerSecond",
           "type": "u64"
+        },
+        {
+          "name": "vaultAddress",
+          "type": "publicKey"
         }
       ]
     },
@@ -235,16 +239,6 @@
           "isSigner": true
         },
         {
-          "name": "referrer",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "vault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
           "name": "poolStakingData",
           "isMut": true,
           "isSigner": false
@@ -320,16 +314,6 @@
           "name": "borrower",
           "isMut": true,
           "isSigner": true
-        },
-        {
-          "name": "referrer",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "vault",
-          "isMut": true,
-          "isSigner": false
         },
         {
           "name": "poolStakingData",
@@ -412,16 +396,6 @@
           "name": "borrower",
           "isMut": true,
           "isSigner": true
-        },
-        {
-          "name": "referrer",
-          "isMut": false,
-          "isSigner": false
-        },
-        {
-          "name": "vault",
-          "isMut": true,
-          "isSigner": false
         },
         {
           "name": "poolStakingData",
@@ -650,16 +624,6 @@
           "isSigner": true
         },
         {
-          "name": "referrer",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vault",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
           "name": "borrower",
           "isMut": true,
           "isSigner": false
@@ -735,16 +699,6 @@
           "name": "liquidator",
           "isMut": true,
           "isSigner": true
-        },
-        {
-          "name": "referrer",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "vault",
-          "isMut": true,
-          "isSigner": false
         },
         {
           "name": "borrower",
@@ -1068,8 +1022,8 @@
     },
     {
       "code": 6013,
-      "name": "InvalidReffererPublicKey",
-      "msg": "invalid refferer publickey"
+      "name": "InvalidreferrerPublicKey",
+      "msg": "invalid referrer publickey"
     },
     {
       "code": 6014,
