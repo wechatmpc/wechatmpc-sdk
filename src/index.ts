@@ -12,6 +12,8 @@ import { Keypair,LAMPORTS_PER_SOL, PublicKey,
   TransactionInstruction,
   Struct,
   SendTransactionError,
+  SimulatedTransactionResponse,
+  ComputeBudgetProgram
 } from "@solana/web3.js";
 // @ts-ignore
 import {
@@ -210,11 +212,13 @@ public tryGetUserTokenAccounts(user:PublicKey , token:PublicKey)
 
       const data = accountInfo.data;
       const collateralAmount = BigInt(data.readBigUInt64LE(8));
-      const borrowedAmount = BigInt(data.readBigUInt64LE(16));
-      const lastUpdated = BigInt(data.readBigInt64LE(24));
+      const depositSolAmount = BigInt(data.readBigUInt64LE(16));
+      const borrowedAmount = BigInt(data.readBigUInt64LE(24));
+      const referrer = new PublicKey(data.slice(32, 64));
+      const lastUpdated = BigInt(data.readBigInt64LE(64)); 
 
       return {
-        collateralAmount,borrowedAmount,lastUpdated
+        collateralAmount,depositSolAmount,borrowedAmount,referrer,lastUpdated
       }
     } catch (err: any) {
       console.error(err)
@@ -675,8 +679,6 @@ public async leverage_pump(amount:number , token:PublicKey , user:PublicKey ,ref
         const instruction = new TransactionInstruction({
           keys: [
               { pubkey: user, isSigner: true, isWritable: true },
-              { pubkey: referral, isSigner: false, isWritable: true },
-              { pubkey: this.pumpLendVault, isSigner: true, isWritable: true },//vault
               { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
               { pubkey: userTokenAccounts.userBorrowData, isSigner: false, isWritable: true },
               { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
@@ -701,6 +703,8 @@ public async leverage_pump(amount:number , token:PublicKey , user:PublicKey ,ref
               { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
               { pubkey: tokenPumpAccounts.rent, isSigner: false, isWritable: false },
               { pubkey: tokenPumpAccounts.eventAuthority, isSigner: false, isWritable: false },
+              { pubkey: referral, isSigner: false, isWritable: true },
+              { pubkey: this.pumpLendVault, isSigner: true, isWritable: true },//vault
             ],
           programId: this.pumpLendProgramId,
           data: data
@@ -897,6 +901,30 @@ public async pump_sell( token:PublicKey , user:PublicKey ,minSolOut:number,amoun
         console.error('Error fetching system config data:', err);
         return false;
       }
+}
+
+/**
+ * Utils fn ::
+ */
+public txTips( tx:Transaction , simulate:any , tips : number = 500 ,unitPrice:number =20000 )
+{
+  if(!simulate || !(simulate as any)?.value || !(simulate as any)?.value.unitsConsumed)
+  {
+    return tx;
+  }
+  const unitsConsumed = (simulate as any).value.unitsConsumed + tips;
+  const unitsPrice = unitPrice;
+  tx.add(
+    ComputeBudgetProgram.setComputeUnitLimit({
+      units: unitsConsumed,
+    }),
+  );
+  tx.add(
+    ComputeBudgetProgram.setComputeUnitPrice({
+      microLamports: unitsPrice,
+    }),
+  );
+  return tx;
 }
 
 }

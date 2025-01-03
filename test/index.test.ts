@@ -40,42 +40,111 @@ const sk = process.env.SK?process.env.SK:"";
 const kp = Keypair.fromSecretKey(bs58.decode(sk));
 const testUser = kp.publicKey;
 const mainnetToken = new PublicKey('Eq1Wrk62j2F2tLf9XfdBssYJVr5k8oLJx3pqEL1rpump')
-test("🍺 Test Pumplend SDK", async () => {
-  console.log("Test User ::",testUser)
+
+const testControl = {
+  dataFetch : false,
+  pumpBuy : false,
+  pumpSell: true
+}
+
+
+test("🍺 Test Data Fetch", async () => {
+  if(testControl.dataFetch)
+  {
+    let lend = new Pumplend()
+    console.log(
+      "Get some data ::",
+      await lend.tryGetUserStakingData(connection,testUser),
+      await lend.tryGetSystemConfigData(connection),
+      await lend.tryGetPoolStakingData(connection),
+      lend.tryGetUserAccounts(testUser),
+    )
+    console.log("Mainnet info :: ",
+      await mainnet.getAccountInfo(testUser)
+    )
+  
+  }else{
+    console.info("⚠Test Module Off")
+  }
+
+  
+})
+
+
+
+
+test("🍺 Test Pumpfun Buy Mainnet", async () => {
+  if(testControl.pumpBuy)
+  {
+  /**
+   * Test Pump Token Buy
+   * 
+   */
   let lend = new Pumplend()
-
-  console.log(
-    "Get some data ::",
-    await lend.tryGetUserStakingData(connection,testUser),
-    await lend.tryGetSystemConfigData(connection),
-    await lend.tryGetPoolStakingData(connection),
-    lend.tryGetUserAccounts(testUser),
-  )
-
-  console.log("Mainnet info :: ",
-    await mainnet.getAccountInfo(testUser)
-  )
-
   const associatedUser = getAssociatedTokenAddressSync(mainnetToken, testUser);
   const pumpTokenAccountTxn = createAssociatedTokenAccountInstruction(testUser,associatedUser,testUser,mainnetToken)
   let tx = new Transaction();
   // tx.add(pumpTokenAccountTxn);
-  const pumpBuyTokenTx =     await lend.pump_buy(
+  const pumpBuyTokenTx = await lend.pump_buy(
     mainnetToken,
     testUser,
-    1000000,
-    100000000
+    1e7,
+    1e8
   );
   if(pumpBuyTokenTx)
   {
     tx.add(
       pumpBuyTokenTx
     )
+    const simulate = await mainnet.simulateTransaction(
+      tx,
+      [kp],
+      [kp.publicKey],
+    );
+
+    console.log("Pump token buy mainnet simulate ::",simulate);
+    tx = lend.txTips(tx,simulate,500);
     console.log(
+      "Pump token buy mainnet ::",tx,
       await mainnet.sendTransaction(tx,[kp])
     )
   }else{
     console.log(pumpBuyTokenTx)
   }
+  }else{
+    console.info("⚠Test Module Off")
+  }
+
+})
+
+test("🍺 Test Pumpfun Sell Mainnet", async () => {
+if(testControl.pumpSell)
+{
+  /**
+ * Test Pump Token Sell
+ */
+let lend = new Pumplend()
+const tx = new Transaction();
+const pumpSellTokenTx = await lend.pump_sell(
+  mainnetToken,
+  testUser,
+  1e7,
+  1e6,
+  
+);
+if(pumpSellTokenTx)
+{
+  tx.add(
+    pumpSellTokenTx
+  )
+  console.log(
+    "Pump token sell mainnet ::",
+    await mainnet.sendTransaction(tx,[kp])
+  )
+}else{
+  console.log(pumpSellTokenTx)
+}
+}
+
 
 })
