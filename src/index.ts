@@ -78,7 +78,6 @@ function getMaxBorrowAmountByAMM(
   collateralAmount: bigint,
   remaining_collateral_amount:bigint
 ) {
-  console.log("🚀 getMaxBorrowAmountByAMM ::",reserves,baseVirtualSolReserves,baseVirtualTokenReserves,collateralAmount,remaining_collateral_amount)
   try {
     const x0 = BigInt(baseVirtualSolReserves);
     const y0 = BigInt(baseVirtualTokenReserves);
@@ -866,21 +865,6 @@ public async pump_buy( token:PublicKey , user:PublicKey ,amount:number,maxSolCos
               buyBuffer
           ]
       )
-      console.log(
-        "Accounts ::",
-        tokenPumpAccounts.global,
-        tokenPumpAccounts.feeRecipient,
-        tokenPumpAccounts.mint,
-        tokenPumpAccounts.bondingCurve,
-        tokenPumpAccounts.associatedBondingCurve,
-        associatedUser,
-        user,
-        SystemProgram.programId,
-        TOKEN_PROGRAM_ID,
-        tokenPumpAccounts.rent,
-        tokenPumpAccounts.eventAuthority,
-        this.pumpfunProgramId
-      )
         const instruction = new TransactionInstruction({
           keys: [
               { pubkey: tokenPumpAccounts.global, isSigner: false, isWritable: false },
@@ -1011,9 +995,6 @@ public pumplend_culcuate_max_borrow(userBorrowDataDetails:any,amount:number ,sta
 
 public pumplend_culcuate_max_leverage(userBorrowDataDetails:any,amount:number,curve:any)
 {
-  
-  console.log(curve)
-
   if(!userBorrowDataDetails || !userBorrowDataDetails?.collateralAmount || !userBorrowDataDetails?.borrowedAmount)
     {
       userBorrowDataDetails = {
@@ -1034,8 +1015,6 @@ public pumplend_culcuate_max_leverage(userBorrowDataDetails:any,amount:number,cu
           tokenReserves:curve.virtualTokenReserves,
         }
       }
-  console.log(curve)
-      
   const newBorrowSol = BigInt(amount);
 
   let borrowedToken = BigInt(0);
