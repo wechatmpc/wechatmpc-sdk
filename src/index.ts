@@ -552,8 +552,6 @@ public async borrow(amount:number , token:PublicKey , user:PublicKey ,referral ?
         const instruction = new TransactionInstruction({
           keys: [
               { pubkey: user, isSigner: true, isWritable: true },
-              { pubkey: referral, isSigner: false, isWritable: true },
-              { pubkey: this.pumpLendVault, isSigner: true, isWritable: true },//vault
               { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
               { pubkey: userTokenAccounts.userBorrowData, isSigner: false, isWritable: true },
               { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
@@ -565,7 +563,10 @@ public async borrow(amount:number , token:PublicKey , user:PublicKey ,referral ?
               { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
               { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
               { pubkey: this.pumpfunProgramId, isSigner: false, isWritable: true },
+              
               { pubkey: tokenPumpAccounts.bondingCurve, isSigner: false, isWritable: true },
+              { pubkey: referral, isSigner: false, isWritable: true },
+              { pubkey: this.pumpLendVault, isSigner: true, isWritable: true },//vault
             ],
           programId: this.pumpLendProgramId,
           data: data
