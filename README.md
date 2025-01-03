@@ -4,6 +4,8 @@ This repo is the NPM SDK of pumplend protocol
 
 Allows developer to build their own contract call base on SDK
 
+You can fetch our SDK [Here](https://www.npmjs.com/package/@pumplend/pumplend-sdk)
+
 ## Function method support
 
 - `stake`

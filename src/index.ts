@@ -2,7 +2,7 @@
 /**
  * Pumplend :: Major class of pumplend SDK
  */
-// @ts-ignore
+
 import { Keypair,LAMPORTS_PER_SOL, PublicKey,
   sendAndConfirmTransaction,
   SystemProgram,
@@ -15,7 +15,6 @@ import { Keypair,LAMPORTS_PER_SOL, PublicKey,
   SimulatedTransactionResponse,
   ComputeBudgetProgram
 } from "@solana/web3.js";
-// @ts-ignore
 import {
 mintTo,
 TOKEN_PROGRAM_ID,
@@ -410,14 +409,14 @@ public tryGetUserTokenAccounts(user:PublicKey , token:PublicKey)
 public tryGetPumpTokenDataAccount(token:PublicKey)
   {
     
-    let [bondingCurve] = PublicKey.findProgramAddressSync(
+    const [bondingCurve] = PublicKey.findProgramAddressSync(
       [
           Buffer.from("bonding-curve"),
           token.toBuffer()
       ],
       this.pumpfunProgramId
   );
-  let [associatedBondingCurve] = PublicKey.findProgramAddressSync(
+  const [associatedBondingCurve] = PublicKey.findProgramAddressSync(
       [
           bondingCurve.toBuffer(),
           new PublicKey("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA").toBuffer(),
@@ -432,7 +431,7 @@ public tryGetPumpTokenDataAccount(token:PublicKey)
       {
         feeRecipient = new PublicKey("CebN5WGQ4jvEPvsVU4EoHEpgzq1VV7AbicfhtW4xC9iM"); //Mainnet
       }
-    let global = new PublicKey("4wTV1YmiEkRvAtNtsSGPtUrqRYQMe5SKy2uB4Jjaxnjf");
+    const global = new PublicKey("4wTV1YmiEkRvAtNtsSGPtUrqRYQMe5SKy2uB4Jjaxnjf");
 
     const rent = new PublicKey("SysvarRent111111111111111111111111111111111");
     const eventAuthority = new PublicKey("Ce6TQqeHC9p8KetsN6JsjHK7UTZk7nasjjnr7XxXp9F1");
@@ -451,7 +450,7 @@ public tryGetPumpTokenDataAccount(token:PublicKey)
   public async tryGetPumpTokenCurveData(connection:Connection , token:PublicKey)
 {
   try {
-    let [bondingCurve] = PublicKey.findProgramAddressSync(
+    const [bondingCurve] = PublicKey.findProgramAddressSync(
       [
           Buffer.from("bonding-curve"),
           token.toBuffer()
@@ -484,7 +483,7 @@ public tryGetPumpTokenDataAccount(token:PublicKey)
   } catch (err: any) {
       return false;
   }
-};
+}
 /**
  * Pumplend base function
  */
@@ -963,7 +962,7 @@ public async pump_sell( token:PublicKey , user:PublicKey ,minSolOut:number,amoun
 /**
  * Utils fn ::
  */
-public txTips( tx:Transaction , simulate:any , tips : number = 500 ,unitPrice:number =20000 )
+public txTips( tx:Transaction , simulate:any , tips = 500 ,unitPrice =20000 )
 {
   if(!simulate || !(simulate as any)?.value || !(simulate as any)?.value.unitsConsumed)
   {
@@ -994,10 +993,10 @@ public pumplend_culcuate_max_borrow(userBorrowDataDetails:any,amount:number ,sta
       borrowedAmount:BigInt(0),
     }
   }
-  let newBorrowToken = BigInt(amount);
+  const newBorrowToken = BigInt(amount);
 
-  let borrowedToken =userBorrowDataDetails.collateralAmount;
-  let borrowedSol =userBorrowDataDetails.borrowedAmount; 
+  const borrowedToken =userBorrowDataDetails.collateralAmount;
+  const borrowedSol =userBorrowDataDetails.borrowedAmount; 
   const newToken = borrowedToken+curveBaseToken;
   const newSol = borrowedSol+curveBaseSol;
   const dSol = newSol-((newSol*newToken)/(newToken+newBorrowToken))
@@ -1037,7 +1036,7 @@ public pumplend_culcuate_max_leverage(userBorrowDataDetails:any,amount:number,cu
       }
   console.log(curve)
       
-  let newBorrowSol = BigInt(amount);
+  const newBorrowSol = BigInt(amount);
 
   let borrowedToken = BigInt(0);
   let borrowedSol = BigInt(0); 
@@ -1049,7 +1048,7 @@ public pumplend_culcuate_max_leverage(userBorrowDataDetails:any,amount:number,cu
     }
   }catch(e)
   {
-
+    e;
   }
   const newToken = borrowedToken+curveBaseToken;
   const newSol = borrowedSol+curveBaseSol;
