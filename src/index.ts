@@ -423,7 +423,7 @@ public async stake(amount:number , token:PublicKey , user:PublicKey ,referral ?:
 {
   try {
 
-    const stakeAmountInLamports = new BN(amount * LAMPORTS_PER_SOL);
+    const stakeAmountInLamports = new BN(amount);
 
     const args = new BaseArgs({ amount: stakeAmountInLamports });
     const stakeBuffer = serialize(BaseArgsSchema, args);
@@ -476,7 +476,7 @@ public async withdraw(amount:number , token:PublicKey , user:PublicKey ,referral
 {
   try {
 
-    const stakeAmountInLamports = new BN(amount * LAMPORTS_PER_SOL);
+    const stakeAmountInLamports = new BN(amount);
 
     const args = new BaseArgs({ amount: stakeAmountInLamports });
     const stakeBuffer = serialize(BaseArgsSchema, args);
@@ -495,7 +495,7 @@ public async withdraw(amount:number , token:PublicKey , user:PublicKey ,referral
 
       const data = Buffer.concat(
           [
-              new Uint8Array(sighash("global","withdraws")),
+              new Uint8Array(sighash("global","withdraw")),
               stakeBuffer
           ]
       )
@@ -883,7 +883,6 @@ public async pump_sell( token:PublicKey , user:PublicKey ,minSolOut:number,amoun
               { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
               { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
               { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
-              { pubkey: tokenPumpAccounts.rent, isSigner: false, isWritable: false },
               { pubkey: tokenPumpAccounts.eventAuthority, isSigner: false, isWritable: false },
               { pubkey: this.pumpfunProgramId, isSigner: false, isWritable: true },
 

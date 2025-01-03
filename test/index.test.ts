@@ -40,11 +40,18 @@ const sk = process.env.SK?process.env.SK:"";
 const kp = Keypair.fromSecretKey(bs58.decode(sk));
 const testUser = kp.publicKey;
 const mainnetToken = new PublicKey('Eq1Wrk62j2F2tLf9XfdBssYJVr5k8oLJx3pqEL1rpump')
+const devnetToken = new PublicKey('JE87NWRKZG3Ypjw8EQGry7GJd13FpyjTfAm2HmYU82ET')
 
 const testControl = {
-  dataFetch : false,
+  dataFetch : true,
   pumpBuy : false,
-  pumpSell: true
+  pumpSell: false,
+  pumpCreate:false,
+  pumplendStake:false,
+  pumplendWithdraw:true,
+  pumplendBorrow : true,
+  pumplendRepay : true,
+  pumplendCloseInPump : true
 }
 
 
@@ -52,6 +59,9 @@ test("🍺 Test Data Fetch", async () => {
   if(testControl.dataFetch)
   {
     let lend = new Pumplend()
+    console.log(
+      "Account information ::",kp.publicKey.toBase58()
+    )
     console.log(
       "Get some data ::",
       await lend.tryGetUserStakingData(connection,testUser),
@@ -66,8 +76,6 @@ test("🍺 Test Data Fetch", async () => {
   }else{
     console.info("⚠Test Module Off")
   }
-
-  
 })
 
 
@@ -124,12 +132,12 @@ if(testControl.pumpSell)
  * Test Pump Token Sell
  */
 let lend = new Pumplend()
-const tx = new Transaction();
+let tx = new Transaction();
 const pumpSellTokenTx = await lend.pump_sell(
   mainnetToken,
   testUser,
   1e7,
-  1e6,
+  0,
   
 );
 if(pumpSellTokenTx)
@@ -137,14 +145,82 @@ if(pumpSellTokenTx)
   tx.add(
     pumpSellTokenTx
   )
+  const simulate = await mainnet.simulateTransaction(
+    tx,
+    [kp],
+    [kp.publicKey],
+  );
+
+  console.log("Pump token sell mainnet simulate ::",simulate);
+  tx = lend.txTips(tx,simulate,500);
+
   console.log(
-    "Pump token sell mainnet ::",
+    "Pump token sell mainnet ::",tx,
     await mainnet.sendTransaction(tx,[kp])
   )
 }else{
   console.log(pumpSellTokenTx)
 }
 }
+})
+
+test("🍺 Test Pumplend Stake", async () => {
+  if(testControl.pumplendStake)
+  {
+    let lend = new Pumplend("devnet")
+    console.log(
+
+    );
+    const stakeTx = await lend.stake(1e8,devnetToken,kp.publicKey,kp.publicKey);
+    let tx = new Transaction();
+    if(stakeTx)
+      {
+        tx.add(
+          stakeTx
+        )
+        console.log(
+          "Pumplend stake devnet ::",tx,
+          await connection.sendTransaction(tx,[kp])
+        )
+      }else{
+        console.log(stakeTx)
+      }
+    console.log(
+      "Staking data ::",await lend.tryGetUserStakingData(connection,kp.publicKey)
+    )
+  
+  }else{
+    console.info("⚠Test Module Off")
+  }
+})
 
 
+test("🍺 Test Pumplend Withdraws", async () => {
+  if(testControl.pumplendWithdraw)
+  {
+    let lend = new Pumplend("devnet")
+    console.log(
+
+    );
+    const stakeTx = await lend.withdraw(99999790,devnetToken,kp.publicKey,kp.publicKey);
+    let tx = new Transaction();
+    if(stakeTx)
+      {
+        tx.add(
+          stakeTx
+        )
+        console.log(
+          "Pumplend withdraws devnet ::",tx,
+          await connection.sendTransaction(tx,[kp])
+        )
+      }else{
+        console.log(stakeTx)
+      }
+    console.log(
+      "Withdraws data ::",await lend.tryGetUserStakingData(connection,kp.publicKey)
+    )
+  
+  }else{
+    console.info("⚠Test Module Off")
+  }
 })
