@@ -40,7 +40,7 @@ const sk = process.env.SK?process.env.SK:"";
 const kp = Keypair.fromSecretKey(bs58.decode(sk));
 const testUser = kp.publicKey;
 const mainnetToken = new PublicKey('Eq1Wrk62j2F2tLf9XfdBssYJVr5k8oLJx3pqEL1rpump')
-const devnetToken = new PublicKey('JE87NWRKZG3Ypjw8EQGry7GJd13FpyjTfAm2HmYU82ET')
+const devnetToken = new PublicKey('Dtt6Zet8QaC4k27KF2NnpPRoomNysDZ3Wmom1cYSwpdd')
 
 const testControl = {
   dataFetch : true,
@@ -48,8 +48,8 @@ const testControl = {
   pumpSell: false,
   pumpCreate:false,
   pumplendStake:false,
-  pumplendWithdraw:true,
-  pumplendBorrow : true,
+  pumplendWithdraw:false,
+  pumplendBorrow : false,
   pumplendRepay : true,
   pumplendCloseInPump : true
 }
@@ -68,6 +68,12 @@ test("🍺 Test Data Fetch", async () => {
       await lend.tryGetSystemConfigData(connection),
       await lend.tryGetPoolStakingData(connection),
       lend.tryGetUserAccounts(testUser),
+    )
+
+    console.log("Token info :: ",
+      await connection.getAccountInfo(
+        getAssociatedTokenAddressSync(devnetToken,kp.publicKey)
+      )
     )
     console.log("Mainnet info :: ",
       await mainnet.getAccountInfo(testUser)
@@ -171,7 +177,7 @@ test("🍺 Test Pumplend Stake", async () => {
     console.log(
 
     );
-    const stakeTx = await lend.stake(1e8,devnetToken,kp.publicKey,kp.publicKey);
+    const stakeTx = await lend.stake(1e8,kp.publicKey,kp.publicKey);
     let tx = new Transaction();
     if(stakeTx)
       {
@@ -199,27 +205,95 @@ test("🍺 Test Pumplend Withdraws", async () => {
   if(testControl.pumplendWithdraw)
   {
     let lend = new Pumplend("devnet")
-    console.log(
-
-    );
-    const stakeTx = await lend.withdraw(99999790,devnetToken,kp.publicKey,kp.publicKey);
+    const withdrawTx = await lend.withdraw(99999790,kp.publicKey,kp.publicKey);
     let tx = new Transaction();
-    if(stakeTx)
+    if(withdrawTx)
       {
         tx.add(
-          stakeTx
+          withdrawTx
         )
         console.log(
           "Pumplend withdraws devnet ::",tx,
           await connection.sendTransaction(tx,[kp])
         )
       }else{
-        console.log(stakeTx)
+        console.log(withdrawTx)
       }
     console.log(
       "Withdraws data ::",await lend.tryGetUserStakingData(connection,kp.publicKey)
     )
   
+  }else{
+    console.info("⚠Test Module Off")
+  }
+})
+
+
+
+test("🍺 Test Pumplend Borrow", async () => {
+  if(testControl.pumplendBorrow)
+  {
+    let lend = new Pumplend("devnet")
+    const borrowTx = await lend.borrow(5000000*1e6,devnetToken,kp.publicKey,kp.publicKey);
+    let tx = new Transaction();
+    const associatedUser = getAssociatedTokenAddressSync(devnetToken, kp.publicKey);
+    const pumpTokenAccountTxn = createAssociatedTokenAccountInstruction(kp.publicKey,associatedUser,kp.publicKey,devnetToken)
+    if(borrowTx)
+      {
+        // tx.add(
+        //   pumpTokenAccountTxn
+        // )
+        tx.add(
+          borrowTx
+        )
+        console.log(
+          "Pumplend borrow devnet ::",tx,
+          await connection.sendTransaction(tx,[kp])
+        )
+      }else{
+        console.log(borrowTx)
+      }
+    console.log(
+      "Borrow data ::",await lend.tryGetUserBorrowData(connection,devnetToken,kp.publicKey)
+    )
+  
+  }else{
+    console.info("⚠Test Module Off")
+  }
+})
+
+
+
+test("🍺 Test Pumplend Repay", async () => {
+  if(testControl.pumplendRepay)
+  {
+    let lend = new Pumplend("devnet")
+    const borrowData = await lend.tryGetUserBorrowData(connection,devnetToken,kp.publicKey)
+    console.log(
+      "Borrow data ::",borrowData
+    )
+  
+
+    if(!borrowData)
+    {
+      return false;
+    }
+
+    const repayTx = await lend.repay(Number(borrowData.borrowedAmount),devnetToken,kp.publicKey,kp.publicKey);
+    let tx = new Transaction();
+    if(repayTx)
+      {
+        tx.add(
+          repayTx
+        )
+        console.log(
+          "Pumplend repay devnet ::",tx,
+          await connection.sendTransaction(tx,[kp])
+        )
+      }else{
+        console.log(repayTx)
+      }
+
   }else{
     console.info("⚠Test Module Off")
   }

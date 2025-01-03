@@ -154,8 +154,7 @@ public tryGetUserTokenAccount(user:PublicKey , token:PublicKey)
 {
   return  getAssociatedTokenAddressSync(
       token,
-      user,
-      true
+      user
   )
 }
 
@@ -419,7 +418,7 @@ public tryGetPumpTokenDataAccount(token:PublicKey)
  * Pumplend base function
  */
 
-public async stake(amount:number , token:PublicKey , user:PublicKey ,referral ?:PublicKey)
+public async stake(amount:number ,user:PublicKey ,referral ?:PublicKey)
 {
   try {
 
@@ -429,12 +428,6 @@ public async stake(amount:number , token:PublicKey , user:PublicKey ,referral ?:
     const stakeBuffer = serialize(BaseArgsSchema, args);
 
     const baseInfo = this.tryGetUserAccounts(user);
-    const userTokenAccount = this.tryGetUserTokenAccount(user,token);
-    const userTokenAccounts = this.tryGetUserTokenAccounts(user,token)
-    if(!userTokenAccount || !userTokenAccounts)
-    {
-      return false;
-    }
     if(!referral)
     {
       referral = user
@@ -452,7 +445,7 @@ public async stake(amount:number , token:PublicKey , user:PublicKey ,referral ?:
               { pubkey: referral, isSigner: false, isWritable: true },
               { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
               { pubkey: baseInfo.userStakingData, isSigner: false, isWritable: true },
-              { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
+              { pubkey: baseInfo.poolTokenAuthority, isSigner: false, isWritable: true },
               { pubkey: baseInfo.systemConfig, isSigner: false, isWritable: true },
               { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }
             ],
@@ -472,7 +465,7 @@ public async stake(amount:number , token:PublicKey , user:PublicKey ,referral ?:
       }
 }
 
-public async withdraw(amount:number , token:PublicKey , user:PublicKey ,referral ?:PublicKey)
+public async withdraw(amount:number ,  user:PublicKey ,referral ?:PublicKey)
 {
   try {
 
@@ -482,12 +475,6 @@ public async withdraw(amount:number , token:PublicKey , user:PublicKey ,referral
     const stakeBuffer = serialize(BaseArgsSchema, args);
 
     const baseInfo = this.tryGetUserAccounts(user);
-    const userTokenAccount = this.tryGetUserTokenAccount(user,token);
-    const userTokenAccounts = this.tryGetUserTokenAccounts(user,token)
-    if(!userTokenAccount || !userTokenAccounts)
-    {
-      return false;
-    }
     if(!referral)
     {
       referral = user
@@ -505,7 +492,7 @@ public async withdraw(amount:number , token:PublicKey , user:PublicKey ,referral
               { pubkey: referral, isSigner: false, isWritable: true },
               { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
               { pubkey: baseInfo.userStakingData, isSigner: false, isWritable: true },
-              { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
+              { pubkey: baseInfo.poolTokenAuthority, isSigner: false, isWritable: true },
               { pubkey: baseInfo.systemConfig, isSigner: false, isWritable: true },
               { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }
             ],
@@ -529,7 +516,7 @@ public async borrow(amount:number , token:PublicKey , user:PublicKey ,referral ?
 {
   try {
 
-    const stakeAmountInLamports = new BN(amount * LAMPORTS_PER_SOL);
+    const stakeAmountInLamports = new BN(amount);
 
     const args = new BaseArgs({ amount: stakeAmountInLamports });
     const stakeBuffer = serialize(BaseArgsSchema, args);
@@ -570,7 +557,7 @@ public async borrow(amount:number , token:PublicKey , user:PublicKey ,referral ?
               
               { pubkey: tokenPumpAccounts.bondingCurve, isSigner: false, isWritable: true },
               { pubkey: referral, isSigner: false, isWritable: true },
-              { pubkey: this.pumpLendVault, isSigner: true, isWritable: true },//vault
+              { pubkey: this.pumpLendVault, isSigner: false, isWritable: true },//vault
             ],
           programId: this.pumpLendProgramId,
           data: data
@@ -592,7 +579,7 @@ public async repay(amount:number , token:PublicKey , user:PublicKey ,referral ?:
 {
   try {
 
-    const stakeAmountInLamports = new BN(amount * LAMPORTS_PER_SOL);
+    const stakeAmountInLamports = new BN(amount);
 
     const args = new BaseArgs({ amount: stakeAmountInLamports });
     const stakeBuffer = serialize(BaseArgsSchema, args);
@@ -652,7 +639,7 @@ public async leverage_pump(amount:number , token:PublicKey , user:PublicKey ,ref
 {
   try {
 
-    const stakeAmountInLamports = new BN(amount * LAMPORTS_PER_SOL);
+    const stakeAmountInLamports = new BN(amount);
 
     const args = new BaseArgs({ amount: stakeAmountInLamports });
     const stakeBuffer = serialize(BaseArgsSchema, args);
@@ -704,7 +691,7 @@ public async leverage_pump(amount:number , token:PublicKey , user:PublicKey ,ref
               { pubkey: tokenPumpAccounts.rent, isSigner: false, isWritable: false },
               { pubkey: tokenPumpAccounts.eventAuthority, isSigner: false, isWritable: false },
               { pubkey: referral, isSigner: false, isWritable: true },
-              { pubkey: this.pumpLendVault, isSigner: true, isWritable: true },//vault
+              { pubkey: this.pumpLendVault, isSigner: false, isWritable: true },//vault
             ],
           programId: this.pumpLendProgramId,
           data: data
@@ -751,7 +738,7 @@ public async close_pump( token:PublicKey , user:PublicKey ,referral ?:PublicKey)
               { pubkey: user, isSigner: true, isWritable: true },
               { pubkey: referral, isSigner: false, isWritable: true },
               { pubkey: user, isSigner: true, isWritable: true },
-              { pubkey: this.pumpLendVault, isSigner: true, isWritable: true },//vault
+              { pubkey: this.pumpLendVault, isSigner: false, isWritable: true },//vault
               { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
               { pubkey: userTokenAccounts.userBorrowData, isSigner: false, isWritable: true },
               { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
