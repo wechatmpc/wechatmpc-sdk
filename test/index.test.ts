@@ -40,17 +40,17 @@ const sk = process.env.SK?process.env.SK:"";
 const kp = Keypair.fromSecretKey(bs58.decode(sk));
 const testUser = kp.publicKey;
 const mainnetToken = new PublicKey('Eq1Wrk62j2F2tLf9XfdBssYJVr5k8oLJx3pqEL1rpump')
-const devnetToken = new PublicKey('Dtt6Zet8QaC4k27KF2NnpPRoomNysDZ3Wmom1cYSwpdd')
+const devnetToken = new PublicKey('BHAWgekea4VHFSPbM7hLVFULxQBt3hzbg1Yxy4GUnqgV')
 
 const testControl = {
-  dataFetch : true,
+  dataFetch : false,
   pumpBuy : false,
   pumpSell: false,
   pumpCreate:false,
   pumplendStake:false,
   pumplendWithdraw:false,
   pumplendBorrow : false,
-  pumplendRepay : false,
+  pumplendRepay : true,
   pumplendCloseInPump : false,
   pumplendMaxBorrowCul:false,
   pumplendMaxLeverageCul:false
