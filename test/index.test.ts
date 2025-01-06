@@ -53,8 +53,8 @@ const testControl = {
   pumplendRepay : false,
   pumplendLeverage : false,
   pumplendCloseInPump : false,
-  pumplendMaxBorrowCul:true,
-  pumplendMaxLeverageCul:true
+  pumplendMaxBorrowCul:false,
+  pumplendMaxLeverageCul:false
 }
 
 
