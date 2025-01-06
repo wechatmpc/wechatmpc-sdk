@@ -430,6 +430,10 @@ public tryGetPumpTokenDataAccount(token:PublicKey)
       {
         feeRecipient = new PublicKey("CebN5WGQ4jvEPvsVU4EoHEpgzq1VV7AbicfhtW4xC9iM"); //Mainnet
       }
+    if(this.network == "devnet")
+    {
+      feeRecipient = new PublicKey("68yFSZxzLWJXkxxRGydZ63C6mHx1NLEDWmwN9Lb5yySg")
+    }
     const global = new PublicKey("4wTV1YmiEkRvAtNtsSGPtUrqRYQMe5SKy2uB4Jjaxnjf");
 
     const rent = new PublicKey("SysvarRent111111111111111111111111111111111");
@@ -802,12 +806,39 @@ public async close_pump( token:PublicKey , user:PublicKey ,referral ?:PublicKey)
               new Uint8Array(sighash("global","liquidate_pump")),
           ]
       )
+      console.log(
+        [
+          { pubkey: user.toBase58(), isSigner: true, isWritable: true },
+          { pubkey: user.toBase58(), isSigner: true, isWritable: true },
+          { pubkey: baseInfo.poolStakingData.toBase58(), isSigner: false, isWritable: true },
+          { pubkey: userTokenAccounts.userBorrowData.toBase58(), isSigner: false, isWritable: true },
+          { pubkey: userTokenAccounts.poolTokenAuthority.toBase58(), isSigner: false, isWritable: true },
+          { pubkey: userTokenAccount.toBase58(), isSigner: false, isWritable: true },
+          { pubkey: userTokenAccounts.poolTokenAccount.toBase58(), isSigner: false, isWritable: true },
+          { pubkey: baseInfo.systemConfig.toBase58(), isSigner: false, isWritable: true },
+          { pubkey: token.toBase58(), isSigner: false, isWritable: true },
+          { pubkey: TOKEN_PROGRAM_ID.toBase58(), isSigner: false, isWritable: true },
+          { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID.toBase58(), isSigner: false, isWritable: true },
+          { pubkey: SystemProgram.programId.toBase58(), isSigner: false, isWritable: false },
+          { pubkey: this.pumpfunProgramId.toBase58(), isSigner: false, isWritable: true },
+          //Remnaining Account
+          { pubkey: tokenPumpAccounts.global.toBase58(), isSigner: false, isWritable: false },
+          { pubkey: tokenPumpAccounts.feeRecipient.toBase58(), isSigner: false, isWritable: true },
+          { pubkey: tokenPumpAccounts.mint.toBase58(), isSigner: false, isWritable: true },
+          { pubkey: tokenPumpAccounts.bondingCurve.toBase58(), isSigner: false, isWritable: true },
+          { pubkey: tokenPumpAccounts.associatedBondingCurve.toBase58(), isSigner: false, isWritable: true },
+          { pubkey: userTokenAccounts.poolTokenAccount.toBase58(), isSigner: false, isWritable: true },
+          { pubkey: userTokenAccounts.poolTokenAuthority.toBase58(), isSigner: false, isWritable: true },
+          { pubkey: SystemProgram.programId.toBase58(), isSigner: false, isWritable: false },
+          { pubkey: TOKEN_PROGRAM_ID.toBase58(), isSigner: false, isWritable: true },
+          { pubkey: tokenPumpAccounts.rent.toBase58(), isSigner: false, isWritable: false },
+          { pubkey: tokenPumpAccounts.eventAuthority.toBase58(), isSigner: false, isWritable: false },
+        ]
+      )
         const instruction = new TransactionInstruction({
           keys: [
               { pubkey: user, isSigner: true, isWritable: true },
-              { pubkey: referral, isSigner: false, isWritable: true },
               { pubkey: user, isSigner: true, isWritable: true },
-              { pubkey: this.pumpLendVault, isSigner: false, isWritable: true },//vault
               { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
               { pubkey: userTokenAccounts.userBorrowData, isSigner: false, isWritable: true },
               { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
@@ -820,6 +851,7 @@ public async close_pump( token:PublicKey , user:PublicKey ,referral ?:PublicKey)
               { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
               { pubkey: this.pumpfunProgramId, isSigner: false, isWritable: true },
               //Remnaining Account
+
               { pubkey: tokenPumpAccounts.global, isSigner: false, isWritable: false },
               { pubkey: tokenPumpAccounts.feeRecipient, isSigner: false, isWritable: true },
               { pubkey: tokenPumpAccounts.mint, isSigner: false, isWritable: true },
@@ -831,6 +863,9 @@ public async close_pump( token:PublicKey , user:PublicKey ,referral ?:PublicKey)
               { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
               { pubkey: tokenPumpAccounts.rent, isSigner: false, isWritable: false },
               { pubkey: tokenPumpAccounts.eventAuthority, isSigner: false, isWritable: false },
+              { pubkey: referral, isSigner: false, isWritable: true },
+              { pubkey: this.pumpLendVault, isSigner: false, isWritable: true },//vault
+              
             ],
           programId: this.pumpLendProgramId,
           data: data

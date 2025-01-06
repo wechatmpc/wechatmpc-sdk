@@ -50,7 +50,7 @@ const testControl = {
   pumplendStake:false,
   pumplendWithdraw:false,
   pumplendBorrow : false,
-  pumplendRepay : true,
+  pumplendRepay : false,
   pumplendCloseInPump : false,
   pumplendMaxBorrowCul:false,
   pumplendMaxLeverageCul:false
@@ -282,6 +282,41 @@ test("🍺 Test Pumplend Repay", async () => {
     }
 
     const repayTx = await lend.repay(Number(borrowData.borrowedAmount),devnetToken,kp.publicKey,kp.publicKey);
+    const tx = new Transaction();
+    if(repayTx)
+      {
+        tx.add(
+          repayTx
+        )
+        console.log(
+          "Pumplend repay devnet ::",tx,
+          await connection.sendTransaction(tx,[kp])
+        )
+      }else{
+        console.log(repayTx)
+      }
+
+  }else{
+    console.info("⚠Test Module Off")
+  }
+})
+
+test("🍺 Test Pumplend Close Position", async () => {
+  if(testControl.pumplendCloseInPump)
+  {
+    const lend = new Pumplend("devnet")
+    const borrowData = await lend.tryGetUserBorrowData(connection,devnetToken,kp.publicKey)
+    console.log(
+      "Borrow data ::",borrowData
+    )
+  
+
+    if(!borrowData)
+    {
+      return false;
+    }
+
+    const repayTx = await lend.close_pump(devnetToken,kp.publicKey,kp.publicKey);
     const tx = new Transaction();
     if(repayTx)
       {
