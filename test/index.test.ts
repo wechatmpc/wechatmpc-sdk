@@ -40,7 +40,7 @@ const sk = process.env.SK?process.env.SK:"";
 const kp = Keypair.fromSecretKey(bs58.decode(sk));
 const testUser = kp.publicKey;
 const mainnetToken = new PublicKey('Eq1Wrk62j2F2tLf9XfdBssYJVr5k8oLJx3pqEL1rpump')
-const devnetToken = new PublicKey('Dtt6Zet8QaC4k27KF2NnpPRoomNysDZ3Wmom1cYSwpdd')
+const devnetToken = new PublicKey('BHAWgekea4VHFSPbM7hLVFULxQBt3hzbg1Yxy4GUnqgV')
 
 const testControl = {
   dataFetch : false,
@@ -282,6 +282,41 @@ test("🍺 Test Pumplend Repay", async () => {
     }
 
     const repayTx = await lend.repay(Number(borrowData.borrowedAmount),devnetToken,kp.publicKey,kp.publicKey);
+    const tx = new Transaction();
+    if(repayTx)
+      {
+        tx.add(
+          repayTx
+        )
+        console.log(
+          "Pumplend repay devnet ::",tx,
+          await connection.sendTransaction(tx,[kp])
+        )
+      }else{
+        console.log(repayTx)
+      }
+
+  }else{
+    console.info("⚠Test Module Off")
+  }
+})
+
+test("🍺 Test Pumplend Close Position", async () => {
+  if(testControl.pumplendCloseInPump)
+  {
+    const lend = new Pumplend("devnet")
+    const borrowData = await lend.tryGetUserBorrowData(connection,devnetToken,kp.publicKey)
+    console.log(
+      "Borrow data ::",borrowData
+    )
+  
+
+    if(!borrowData)
+    {
+      return false;
+    }
+
+    const repayTx = await lend.close_pump(devnetToken,kp.publicKey,kp.publicKey);
     const tx = new Transaction();
     if(repayTx)
       {
