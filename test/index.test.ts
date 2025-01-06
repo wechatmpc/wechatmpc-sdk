@@ -51,6 +51,7 @@ const testControl = {
   pumplendWithdraw:false,
   pumplendBorrow : false,
   pumplendRepay : false,
+  pumplendLeverage : true,
   pumplendCloseInPump : false,
   pumplendMaxBorrowCul:false,
   pumplendMaxLeverageCul:false
@@ -300,6 +301,39 @@ test("🍺 Test Pumplend Repay", async () => {
     console.info("⚠Test Module Off")
   }
 })
+
+test("🍺 Test Pumplend Leverage", async () => {
+  if(testControl.pumplendLeverage)
+  {
+    const lend = new Pumplend("devnet")
+    const borrowTx = await lend.leverage_pump(1e8,devnetToken,kp.publicKey,kp.publicKey);
+    const tx = new Transaction();
+    const associatedUser = getAssociatedTokenAddressSync(devnetToken, kp.publicKey);
+    const pumpTokenAccountTxn = createAssociatedTokenAccountInstruction(kp.publicKey,associatedUser,kp.publicKey,devnetToken)
+    if(borrowTx)
+      {
+        // tx.add(
+        //   pumpTokenAccountTxn
+        // )
+        tx.add(
+          borrowTx
+        )
+        console.log(
+          "Pumplend leverage devnet ::",tx,
+          await connection.sendTransaction(tx,[kp])
+        )
+      }else{
+        console.log(borrowTx)
+      }
+    console.log(
+      "Borrow data ::",await lend.tryGetUserBorrowData(connection,devnetToken,kp.publicKey)
+    )
+  
+  }else{
+    console.info("⚠Test Module Off")
+  }
+})
+
 
 test("🍺 Test Pumplend Close Position", async () => {
   if(testControl.pumplendCloseInPump)

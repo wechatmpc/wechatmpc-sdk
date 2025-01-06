@@ -258,7 +258,13 @@ public tryGetUserTokenAccounts(user:PublicKey , token:PublicKey)
 
   }catch(e)
   {
-    return false;
+    return {
+      collateralAmount:0,
+      depositSolAmount:0,
+      borrowedAmount:0,
+      referrer:new PublicKey(0),
+      lastUpdated:Date.now()
+    }
   }
 }
 
@@ -290,7 +296,13 @@ public tryGetUserTokenAccounts(user:PublicKey , token:PublicKey)
       }
     } catch (err: any) {
       console.error(err)
-      return false;
+      return {
+        collateralAmount:0,
+        depositSolAmount:0,
+        borrowedAmount:0,
+        referrer:new PublicKey(0),
+        lastUpdated:Date.now()
+      }
     }
   }
 
