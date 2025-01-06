@@ -4,6 +4,8 @@ This repo is the NPM SDK of pumplend protocol
 
 Allows developer to build their own contract call base on SDK
 
+You can fetch our SDK [Here](https://www.npmjs.com/package/@pumplend/pumplend-sdk)
+
 ## Function method support
 
 - `stake`
@@ -27,10 +29,10 @@ Allows developer to build their own contract call base on SDK
     - From other account : liquidate the user token position in raydium
 
 - Pump.fun Functions
-    - `buy`
-        - Buy Tokens
-    - `sell`
-        - Sell Tokens
+    - `pump_buy`
+        - Buy Tokens in pump.fun
+    - `pump_sell`
+        - Sell Tokens in pump.fun
     - `mint`
         - New Token Mint via pump.fun
 
@@ -47,6 +49,12 @@ Allows developer to build their own contract call base on SDK
 
 - `SystemConfigData`
     - Protocol base states and currently status
+
+- `pumplend_culcuate_max_borrow`
+    - Get max borrw able amount with tokenamount input
+
+- `pumplend_culcuate_max_leverage`
+    - Get max leverage able amount with SOLamount input
 
 - Pump.fun Datas
     - `BondingCurve`

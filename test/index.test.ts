@@ -60,7 +60,7 @@ const testControl = {
 test("🍺 Test Data Fetch", async () => {
   if(testControl.dataFetch)
   {
-    let lend = new Pumplend()
+    const lend = new Pumplend()
     console.log(
       "Account information ::",kp.publicKey.toBase58()
     )
@@ -96,7 +96,7 @@ test("🍺 Test Pumpfun Buy Mainnet", async () => {
    * Test Pump Token Buy
    * 
    */
-  let lend = new Pumplend()
+  const lend = new Pumplend()
   const associatedUser = getAssociatedTokenAddressSync(mainnetToken, testUser);
   const pumpTokenAccountTxn = createAssociatedTokenAccountInstruction(testUser,associatedUser,testUser,mainnetToken)
   let tx = new Transaction();
@@ -139,7 +139,7 @@ if(testControl.pumpSell)
   /**
  * Test Pump Token Sell
  */
-let lend = new Pumplend()
+const lend = new Pumplend()
 let tx = new Transaction();
 const pumpSellTokenTx = await lend.pump_sell(
   mainnetToken,
@@ -175,12 +175,12 @@ if(pumpSellTokenTx)
 test("🍺 Test Pumplend Stake", async () => {
   if(testControl.pumplendStake)
   {
-    let lend = new Pumplend("devnet")
+    const lend = new Pumplend("devnet")
     console.log(
 
     );
     const stakeTx = await lend.stake(1e8,kp.publicKey,kp.publicKey);
-    let tx = new Transaction();
+    const tx = new Transaction();
     if(stakeTx)
       {
         tx.add(
@@ -206,9 +206,9 @@ test("🍺 Test Pumplend Stake", async () => {
 test("🍺 Test Pumplend Withdraws", async () => {
   if(testControl.pumplendWithdraw)
   {
-    let lend = new Pumplend("devnet")
+    const lend = new Pumplend("devnet")
     const withdrawTx = await lend.withdraw(99999790,kp.publicKey,kp.publicKey);
-    let tx = new Transaction();
+    const tx = new Transaction();
     if(withdrawTx)
       {
         tx.add(
@@ -235,9 +235,9 @@ test("🍺 Test Pumplend Withdraws", async () => {
 test("🍺 Test Pumplend Borrow", async () => {
   if(testControl.pumplendBorrow)
   {
-    let lend = new Pumplend("devnet")
+    const lend = new Pumplend("devnet")
     const borrowTx = await lend.borrow(5000000*1e6,devnetToken,kp.publicKey,kp.publicKey);
-    let tx = new Transaction();
+    const tx = new Transaction();
     const associatedUser = getAssociatedTokenAddressSync(devnetToken, kp.publicKey);
     const pumpTokenAccountTxn = createAssociatedTokenAccountInstruction(kp.publicKey,associatedUser,kp.publicKey,devnetToken)
     if(borrowTx)
@@ -269,7 +269,7 @@ test("🍺 Test Pumplend Borrow", async () => {
 test("🍺 Test Pumplend Repay", async () => {
   if(testControl.pumplendRepay)
   {
-    let lend = new Pumplend("devnet")
+    const lend = new Pumplend("devnet")
     const borrowData = await lend.tryGetUserBorrowData(connection,devnetToken,kp.publicKey)
     console.log(
       "Borrow data ::",borrowData
@@ -282,7 +282,7 @@ test("🍺 Test Pumplend Repay", async () => {
     }
 
     const repayTx = await lend.repay(Number(borrowData.borrowedAmount),devnetToken,kp.publicKey,kp.publicKey);
-    let tx = new Transaction();
+    const tx = new Transaction();
     if(repayTx)
       {
         tx.add(
@@ -304,7 +304,7 @@ test("🍺 Test Pumplend Repay", async () => {
 test("🍺 Test Max Borrow", async () => {
   if(testControl.pumplendMaxBorrowCul)
   {
-    let lend = new Pumplend()
+    const lend = new Pumplend()
     const borrowData =  await lend.tryGetUserBorrowData(connection,devnetToken,kp.publicKey);
     console.log("borrowData",borrowData)
     console.log(
@@ -324,7 +324,7 @@ test("🍺 Test Max Borrow", async () => {
 test("🍺 Test Max Leverage", async () => {
   if(testControl.pumplendMaxLeverageCul)
   {
-    let lend = new Pumplend()
+    const lend = new Pumplend()
     const borrowData =  await lend.tryGetUserBorrowData(connection,devnetToken,kp.publicKey);
     const curve = await lend.tryGetPumpTokenCurveData(mainnet,mainnetToken)
     console.log("borrowData",borrowData)
