@@ -40,7 +40,7 @@ const sk = process.env.SK?process.env.SK:"";
 const kp = Keypair.fromSecretKey(bs58.decode(sk));
 const testUser = kp.publicKey;
 const mainnetToken = new PublicKey('Eq1Wrk62j2F2tLf9XfdBssYJVr5k8oLJx3pqEL1rpump')
-const devnetToken = new PublicKey('BHAWgekea4VHFSPbM7hLVFULxQBt3hzbg1Yxy4GUnqgV')
+const devnetToken = new PublicKey('4u4aGDJRdyB5CA9sNxzjCP4YWxuqHMzxPFgnPV1cFgK3')
 
 const testControl = {
   dataFetch : false,
@@ -373,7 +373,7 @@ test("🍺 Test Pumplend Close Position", async () => {
 test("🍺 Test Max Borrow", async () => {
   if(testControl.pumplendMaxBorrowCul)
   {
-    const lend = new Pumplend()
+    const lend = new Pumplend("devnet")
     const borrowData =  await lend.tryGetUserBorrowData(connection,devnetToken,kp.publicKey);
     console.log("borrowData",borrowData)
     console.log(
@@ -393,15 +393,15 @@ test("🍺 Test Max Borrow", async () => {
 test("🍺 Test Max Leverage", async () => {
   if(testControl.pumplendMaxLeverageCul)
   {
-    const lend = new Pumplend()
+    const lend = new Pumplend("devnet")
     const borrowData =  await lend.tryGetUserBorrowData(connection,devnetToken,kp.publicKey);
-    const curve = await lend.tryGetPumpTokenCurveData(mainnet,mainnetToken)
-    console.log("borrowData",borrowData)
+    const curve = await lend.tryGetPumpTokenCurveData(connection,devnetToken)
+    console.log("borrowData",borrowData,curve)
     console.log(
       "Max Leverage ::",lend.pumplend_culcuate_max_leverage(
         borrowData
        ,
-        1e9
+        1e8
         ,
         curve
       )

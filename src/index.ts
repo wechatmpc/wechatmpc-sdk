@@ -49,72 +49,170 @@ function sighash(namespace: string, name: string): Buffer {
   return fullHash.slice(0, 8);  
 }
 
-function sqrtBigInt(value: bigint): bigint {
-  if (value < BigInt(0)) {
-    throw new Error("Cannot calculate square root of a negative number");
-  }
-
-  let x = value;
-  let y = (x + BigInt(1)) / BigInt(2);
-
-  while (y < x) {
-    x = y;
-    y = (x + value / x) / BigInt(2);
-  }
-
-  return x;
-}
-
-
 type Reserves = {
-  solReserves: bigint;
-  tokenReserves: bigint;
+  solReserves: bigint; // SOL reserves in the pool
+  tokenReserves: bigint; // Token reserves in the pool
+  realTokenReserves: bigint; // Real token reserves in the pool
 };
+
+type BuyTokenToSolResult = {
+  tokenAmountOut: bigint;
+  newBorrowAmount: bigint;
+};
+
+// Placeholder function for `buy_token_to_sol`, you need to implement its logic
+function buyTokenToSol(
+  baseVirtualSolReserves: bigint,
+  baseVirtualTokenReserves: bigint,
+  userCollateralAmount: bigint,
+  userBorrowedAmount: bigint,
+  poolVirtualSolReserves: bigint,
+  poolVirtualTokenReserves: bigint,
+  solInputAmount: bigint
+): { tokenAmountOut: bigint; newBorrowAmount: bigint } {
+  // Calculate effective SOL input after fees
+  const effectiveSolInput = (solInputAmount * BigInt(99)) / BigInt(100);
+  console.log("sol_input_amount:", effectiveSolInput.toString());
+
+  // Calculate virtual token reserves
+  const virtualTokenReserves =
+    (poolVirtualSolReserves * poolVirtualTokenReserves) /
+    (poolVirtualSolReserves + effectiveSolInput);
+
+  const tokenAmountOut = poolVirtualTokenReserves - virtualTokenReserves;
+  console.log("Buy Token To Sol: token_output_amount:", tokenAmountOut.toString());
+
+  // Calculate virtual SOL reserves
+  const virtualSolReserves =
+    (baseVirtualSolReserves * baseVirtualTokenReserves) /
+    (baseVirtualTokenReserves + userCollateralAmount + tokenAmountOut);
+
+  console.log("virtual_sol_reserves:", virtualSolReserves.toString());
+  console.log("base_virtual_sol_reserves:", baseVirtualSolReserves.toString());
+  console.log("base_virtual_token_reserves:", baseVirtualTokenReserves.toString());
+
+  // Calculate SOL delta and new borrow amount
+  const solDelta = baseVirtualSolReserves - virtualSolReserves;
+  const totalBorrowedAmount = (solDelta * BigInt(7)) / BigInt(10);
+  console.log("total_borrowed_amount:", totalBorrowedAmount.toString());
+  console.log("user_borrowed_amount:", userBorrowedAmount.toString());
+
+  const newBorrowAmount = totalBorrowedAmount - userBorrowedAmount;
+  console.log("new_borrow_amount:", newBorrowAmount.toString());
+
+  return { tokenAmountOut, newBorrowAmount };
+}
 
 function getMaxBorrowAmountByAMM(
   reserves: Reserves,
   baseVirtualSolReserves: bigint,
   baseVirtualTokenReserves: bigint,
+  userBorrowedAmount: bigint,
+  userCollateralAmount: bigint,
   collateralAmount: bigint,
   remaining_collateral_amount:bigint
 ) {
-  try {
-    const x0 = BigInt(baseVirtualSolReserves);
-    const y0 = BigInt(baseVirtualTokenReserves);
-    const x1 = BigInt(reserves.solReserves);
-    const y1 = BigInt(reserves.tokenReserves);
-    const k = BigInt(collateralAmount) - BigInt(remaining_collateral_amount);
 
-    const a = ((y1 - y0) * BigInt(7)) / BigInt(10);
-    const b =
-      ((x0 * y1 * BigInt(7)) / BigInt(10)) - x1 * y0 + k * y1 - k * y0;
-    const c = k * x0 * y1;
+  try{
 
-    const b_4ac = b * b - a * c * BigInt(4);
 
-    if (b_4ac < BigInt(0)) {
-      throw new Error("MathOverflow: Negative square root");
+  let tokenAmountIn = BigInt(0);
+  let tokenAmountOut = BigInt(0);
+
+  let userBorrowed = userBorrowedAmount;
+  let userCollateral = userCollateralAmount;
+  let poolVirtualSolReserves = reserves.solReserves;
+  let poolVirtualTokenReserves = reserves.tokenReserves;
+  let solInputAmount = collateralAmount;
+
+  for (let i = 0; i < 10; i++) {
+    const { tokenAmountOut: _tokenAmountOut, newBorrowAmount: _newBorrowAmount } =
+      buyTokenToSol(
+        baseVirtualSolReserves,
+        baseVirtualTokenReserves,
+        userCollateral,
+        userBorrowed,
+        poolVirtualSolReserves,
+        poolVirtualTokenReserves,
+        solInputAmount
+      );
+
+    tokenAmountIn += solInputAmount;
+    tokenAmountOut += _tokenAmountOut;
+
+    if (_newBorrowAmount < remaining_collateral_amount) {
+      break;
     }
 
-    const b_4ac_sqrt = sqrtBigInt(b_4ac);
-
-    const xn = (-b - b_4ac_sqrt) / (a * BigInt(2));
-    const yn = y1 - (x1 * y1) / (x1 + xn);
-
-    if (xn < BigInt(0) || yn < BigInt(0)) {
-      throw new Error("MathOverflow: Resulting values are negative");
+    if (reserves.realTokenReserves < tokenAmountOut) {
+      throw new Error("Reach max buyable");
     }
+
+    userCollateral += _tokenAmountOut;
+    userBorrowed += _newBorrowAmount;
+    poolVirtualSolReserves += solInputAmount;
+    poolVirtualTokenReserves -= _tokenAmountOut;
+    solInputAmount = _newBorrowAmount;
+  }
 
     return {
-      sol:xn, 
-      token:yn
-    };
-  } catch (error) {
-    console.error("Error calculating max borrow amount:", error);
-    // return new Error("MathError: Unable to calculate borrow amount");
-    return false;
-  }
+    sol:tokenAmountIn, 
+    token:tokenAmountOut
+  };
+    }catch(e:any)
+      
+    {
+      return false;
+    }
 }
+
+// function getMaxBorrowAmountByAMM(
+//   reserves: Reserves,
+//   baseVirtualSolReserves: bigint,
+//   baseVirtualTokenReserves: bigint,
+//   collateralAmount: bigint,
+//   remaining_collateral_amount:bigint
+// ) {
+//   try {
+//     const x0 = BigInt(baseVirtualSolReserves);
+//     const y0 = BigInt(baseVirtualTokenReserves);
+//     const x1 = BigInt(reserves.solReserves);
+//     const y1 = BigInt(reserves.tokenReserves);
+//     const k = BigInt(collateralAmount) - BigInt(remaining_collateral_amount);
+
+//     const a = ((y1 - y0) * BigInt(7)) / BigInt(10);
+//     const b =
+//       ((x0 * y1 * BigInt(7)) / BigInt(10)) - x1 * y0 + k * y1 - k * y0;
+//     const c = k * x0 * y1;
+
+//     const b_4ac = b * b - a * c * BigInt(4);
+
+//     if (b_4ac < BigInt(0)) {
+//       throw new Error("MathOverflow: Negative square root");
+//     }
+
+//     const b_4ac_sqrt = sqrtBigInt(b_4ac);
+
+//     console.log("a : ",a)
+
+//     const xn = (-b - b_4ac_sqrt) / (a * BigInt(2));
+
+//     const yn = y1 - (x1 * y1) / (x1 + xn);
+
+//     if (xn < BigInt(0) || yn < BigInt(0)) {
+//       throw new Error("MathOverflow: Resulting values are negative");
+//     }
+
+//     return {
+//       sol:xn, 
+//       token:yn
+//     };
+//   } catch (error) {
+//     console.error("Error calculating max borrow amount:", error);
+//     // return new Error("MathError: Unable to calculate borrow amount");
+//     return false;
+//   }
+// }
 
 //Args class
 class BaseArgs extends Struct {
@@ -1025,6 +1123,7 @@ public pumplend_culcuate_max_leverage(userBorrowDataDetails:any,amount:number,cu
         curve = {
           solReserves:curve.virtualSolReserves,
           tokenReserves:curve.virtualTokenReserves,
+          realTokenReserves:curve.realTokenReserves,
         }
       }
   const newBorrowSol = BigInt(amount);
@@ -1047,9 +1146,26 @@ public pumplend_culcuate_max_leverage(userBorrowDataDetails:any,amount:number,cu
     {
       solReserves:curve.solReserves,
       tokenReserves:curve.tokenReserves,
+      realTokenReserves:curve.realTokenReserves,
     },
     newSol,
     newToken,
+    userBorrowDataDetails.borrowedAmount,
+    userBorrowDataDetails.collateralAmount,
+    newBorrowSol,
+    BigInt(amount*0.1)
+  )
+
+  console.log(
+    {
+      solReserves:curve.solReserves,
+      tokenReserves:curve.tokenReserves,
+      realTokenReserves:curve.realTokenReserves,
+    },
+    newSol,
+    newToken,
+    userBorrowDataDetails.borrowedAmount,
+    userBorrowDataDetails.collateralAmount,
     newBorrowSol,
     BigInt(amount*0.1)
   )
