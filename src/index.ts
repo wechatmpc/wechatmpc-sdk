@@ -1174,8 +1174,8 @@ public pumplend_culcuate_max_leverage(userBorrowDataDetails:any,amount:number,cu
 
 public pumplend_estimate_interest(userBorrowDataDetails:any,interestRate?:number )
 {
-  let ir = interestRate ? interestRate : 0.01 ; //Rate in day
-  let ret = {
+  const ir = interestRate ? interestRate : 0.01 ; //Rate in day
+  const ret = {
     interest : 0,
     liquiteTime : 0,
     liquiteRemainingTime:0, //Second
@@ -1185,10 +1185,10 @@ public pumplend_estimate_interest(userBorrowDataDetails:any,interestRate?:number
     return ret
   }
 
-  ret.interest = (
+  ret.interest = Math.floor((
     (Date.now() - Number(userBorrowDataDetails.lastUpdated)) //Dt . in second
     / 86400*ir
-  ) * Number(userBorrowDataDetails.depositSolAmount)
+  ) * Number(userBorrowDataDetails.borrowedAmount))
 
   ret.liquiteTime = Math.floor(
     Number(userBorrowDataDetails.lastUpdated) + 
