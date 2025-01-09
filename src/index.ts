@@ -1185,10 +1185,13 @@ public pumplend_estimate_interest(userBorrowDataDetails:any,interestRate?:number
     return ret
   }
 
-  ret.interest = Math.floor((
-    (Date.now() - Number(userBorrowDataDetails.lastUpdated)) //Dt . in second
+  ret.interest = Math.floor(
+    (
+    (
+      (Date.now()/1000) - Number(userBorrowDataDetails.lastUpdated)) //Dt . in second
     / 86400*ir
-  ) * Number(userBorrowDataDetails.borrowedAmount))
+    ) 
+  * Number(userBorrowDataDetails.borrowedAmount))
 
   ret.liquiteTime = Math.floor(
     Number(userBorrowDataDetails.lastUpdated) + 
