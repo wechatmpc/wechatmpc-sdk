@@ -393,7 +393,7 @@ public tryGetUserTokenAccounts(user:PublicKey , token:PublicKey)
         depositSolAmount:0,
         borrowedAmount:0,
         referrer:new PublicKey(0),
-        lastUpdated:Date.now(),
+        lastUpdated:Math.floor(Date.now()/1000),
       }
     }
   }
@@ -1170,6 +1170,38 @@ public pumplend_culcuate_max_leverage(userBorrowDataDetails:any,amount:number,cu
     BigInt(amount*0.1)
   )
   return dToken;
+}
+
+public pumplend_estimate_interest(userBorrowDataDetails:any,interestRate?:number )
+{
+  let ir = interestRate ? interestRate : 0.01 ; //Rate in day
+  let ret = {
+    interest : 0,
+    liquiteTime : 0,
+    liquiteRemainingTime:0, //Second
+  }
+  if(!userBorrowDataDetails || !userBorrowDataDetails?.collateralAmount || !userBorrowDataDetails?.borrowedAmount)
+  {
+    return ret
+  }
+
+  ret.interest = (
+    (Date.now() - Number(userBorrowDataDetails.lastUpdated)) //Dt . in second
+    / 86400*ir
+  ) * Number(userBorrowDataDetails.depositSolAmount)
+
+  ret.liquiteTime = Math.floor(
+    Number(userBorrowDataDetails.lastUpdated) + 
+    (
+      1/
+      (7 * (ir /86400))
+    )
+  )
+
+  ret.liquiteRemainingTime = Math.floor(
+    ret.liquiteTime - (Date.now()/1000)
+  )
+  return ret;
 }
 
 }

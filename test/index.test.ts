@@ -53,7 +53,7 @@ const testControl = {
   pumplendRepay : false,
   pumplendLeverage : false,
   pumplendCloseInPump : false,
-  pumplendMaxBorrowCul:false,
+  pumplendMaxBorrowCul:true,
   pumplendMaxLeverageCul:false
 }
 
@@ -383,6 +383,15 @@ test("🍺 Test Max Borrow", async () => {
         1e16
         ,
         await lend.tryGetPoolStakingData(connection)
+      )
+    )
+    if(!borrowData)
+    {
+      return false;
+    }
+      console.log(
+      "Position Liquite & Interest ::",lend.pumplend_estimate_interest(
+        borrowData
       )
     )
   }else{
