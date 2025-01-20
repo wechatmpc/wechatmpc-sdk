@@ -886,7 +886,7 @@ public async leverage_pump(amount:number , token:PublicKey , user:PublicKey ,ref
       }
 }
 
-public async close_pump( token:PublicKey , user:PublicKey ,referral ?:PublicKey)
+public async close_pump( token:PublicKey , user:PublicKey ,referral ?:PublicKey ,liquitor ?:PublicKey)
 {
   try {
 
@@ -904,6 +904,10 @@ public async close_pump( token:PublicKey , user:PublicKey ,referral ?:PublicKey)
     {
       referral = user
     }
+    if(!liquitor)
+    {
+      liquitor = user
+    }
 
       const data = Buffer.concat(
           [
@@ -912,7 +916,7 @@ public async close_pump( token:PublicKey , user:PublicKey ,referral ?:PublicKey)
       )
         const instruction = new TransactionInstruction({
           keys: [
-              { pubkey: user, isSigner: true, isWritable: true },
+              { pubkey: liquitor, isSigner: true, isWritable: true },
               { pubkey: user, isSigner: true, isWritable: true },
               { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
               { pubkey: userTokenAccounts.userBorrowData, isSigner: false, isWritable: true },
