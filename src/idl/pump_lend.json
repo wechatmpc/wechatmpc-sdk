@@ -644,11 +644,6 @@
           "isSigner": false
         },
         {
-          "name": "userTokenAccount",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
           "name": "poolTokenAccount",
           "isMut": true,
           "isSigner": false
@@ -717,11 +712,6 @@
         },
         {
           "name": "poolTokenAuthority",
-          "isMut": true,
-          "isSigner": false
-        },
-        {
-          "name": "userTokenAccount",
           "isMut": true,
           "isSigner": false
         },

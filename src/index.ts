@@ -922,7 +922,6 @@ public async close_pump( token:PublicKey , user:PublicKey ,referral ?:PublicKey 
               { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
               { pubkey: userTokenAccounts.userBorrowData, isSigner: false, isWritable: true },
               { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
-              { pubkey: userTokenAccount, isSigner: false, isWritable: true },
               { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
               { pubkey: baseInfo.systemConfig, isSigner: false, isWritable: true },
               { pubkey: token, isSigner: false, isWritable: true },
