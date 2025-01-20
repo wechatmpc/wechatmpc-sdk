@@ -482,16 +482,18 @@ public tryGetUserTokenAccounts(user:PublicKey , token:PublicKey)
       const initialized = Boolean(data.readUInt8(offset));
       const authority = new PublicKey(data.slice(offset + 1, offset + 33)).toBase58();
       const poolTokenAuthority = new PublicKey(data.slice(offset + 33, offset + 65)).toBase58();
-      const pumpFunProgram = new PublicKey(data.slice(offset + 65, offset + 97)).toBase58();
-      const baseVirtualTokenReserves = BigInt(data.readBigUInt64LE(offset + 97));
-      const baseVirtualSolReserves = BigInt(data.readBigUInt64LE(offset + 105));
-      const poolTokenAuthorityBumpSeed = data.readUInt8(offset + 113);
-      const borrowRatePerSecond = BigInt(data.readBigUInt64LE(offset + 114));
+      const vault = new PublicKey(data.slice(offset + 65, offset + 97)).toBase58();
+      const pumpFunProgram = new PublicKey(data.slice(offset + 97, offset + 129)).toBase58();
+      const baseVirtualTokenReserves = BigInt(data.readBigUInt64LE(offset + 129));
+      const baseVirtualSolReserves = BigInt(data.readBigUInt64LE(offset + 137));
+      const poolTokenAuthorityBumpSeed = data.readUInt8(offset + 145);
+      const borrowRatePerSecond = BigInt(data.readBigUInt64LE(offset + 146));
   
       return {
         initialized,
         authority,
         poolTokenAuthority,
+        vault,
         pumpFunProgram,
         baseVirtualTokenReserves,
         baseVirtualSolReserves,

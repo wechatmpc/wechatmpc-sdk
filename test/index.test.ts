@@ -61,13 +61,17 @@ const testControl = {
 test("🍺 Test Data Fetch", async () => {
   if(testControl.dataFetch)
   {
-    const lend = new Pumplend()
+    const lend = new Pumplend("devnet")
     console.log(
       "Account information ::",kp.publicKey.toBase58()
     )
     console.log(
+      lend.tryGetUserAccounts(kp.publicKey)
+    )
+    console.log(
       "Get some data ::",
       await lend.tryGetUserStakingData(connection,testUser),
+      "systemconfig::",
       await lend.tryGetSystemConfigData(connection),
       await lend.tryGetPoolStakingData(connection),
       lend.tryGetUserAccounts(testUser),
