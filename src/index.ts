@@ -917,7 +917,7 @@ public async close_pump( token:PublicKey , user:PublicKey ,referral ?:PublicKey 
         const instruction = new TransactionInstruction({
           keys: [
               { pubkey: liquitor, isSigner: true, isWritable: true },
-              { pubkey: user, isSigner: true, isWritable: true },
+              { pubkey: user, isSigner: false, isWritable: true },
               { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
               { pubkey: userTokenAccounts.userBorrowData, isSigner: false, isWritable: true },
               { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
