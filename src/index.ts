@@ -893,13 +893,9 @@ public async close_pump( token:PublicKey , user:PublicKey ,referral ?:PublicKey 
 
 
     const baseInfo = this.tryGetUserAccounts(user);
-    const userTokenAccount = this.tryGetUserTokenAccount(user,token);
     const userTokenAccounts = this.tryGetUserTokenAccounts(user,token)
     const tokenPumpAccounts = this.tryGetPumpTokenDataAccount(token)
-    if(!userTokenAccount || !userTokenAccounts)
-    {
-      return false;
-    }
+
     if(!referral)
     {
       referral = user
@@ -907,6 +903,11 @@ public async close_pump( token:PublicKey , user:PublicKey ,referral ?:PublicKey 
     if(!liquitor)
     {
       liquitor = user
+    }
+    const userTokenAccount = this.tryGetUserTokenAccount(liquitor,token);
+    if(!userTokenAccount || !userTokenAccounts)
+    {
+      return false;
     }
 
       const data = Buffer.concat(
