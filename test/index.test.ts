@@ -53,8 +53,8 @@ const testControl = {
   pumplendRepay : false,
   pumplendLeverage : false,
   pumplendCloseInPump : false,
-  pumplendMaxBorrowCul:true,
-  pumplendMaxLeverageCul:false
+  pumplendMaxBorrowCul:false,
+  pumplendMaxLeverageCul:true
 }
 
 
@@ -389,9 +389,10 @@ test("🍺 Test Max Borrow", async () => {
     console.log("borrowData",borrowData)
     console.log(
       "Max Borrow ::",lend.pumplend_culcuate_max_borrow(
-        borrowData
+        // borrowData
+        {}
        ,
-        1e16
+        1e10
         ,
         await lend.tryGetPoolStakingData(connection)
       )

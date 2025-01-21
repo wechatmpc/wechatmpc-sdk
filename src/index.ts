@@ -1094,13 +1094,14 @@ public pumplend_culcuate_max_borrow(userBorrowDataDetails:any,amount:number ,sta
     }
   }
   const newBorrowToken = BigInt(amount);
-
   const borrowedToken =userBorrowDataDetails.collateralAmount;
   const borrowedSol =userBorrowDataDetails.borrowedAmount; 
-  const newToken = borrowedToken+curveBaseToken;
-  const newSol = borrowedSol+curveBaseSol;
-  const dSol = newSol-((newSol*newToken)/(newToken+newBorrowToken))
-  let ret =  Number((Number(dSol)*0.7).toFixed(0));
+  const oldToken = curveBaseToken;
+  const oldSol = curveBaseSol;
+  const newToken = oldToken-(newBorrowToken+borrowedToken)
+  const newSol = (oldSol*oldToken)/(newToken)
+  const dSol = newSol - oldSol;
+  let ret =  Number(((Number(dSol)*0.7)-Number(borrowedSol)).toFixed(0));
   if(stakeStatus && ret>(stakeStatus.totalStaked -stakeStatus.totalBorrowed ))
   {
     ret = Number(Number(stakeStatus.totalStaked -stakeStatus.totalBorrowed).toFixed(0))
@@ -1119,13 +1120,14 @@ public pumplend_culcuate_max_borrow_rate(userBorrowDataDetails:any,amount:number
     }
   }
   const newBorrowToken = BigInt(amount);
-
   const borrowedToken =userBorrowDataDetails.collateralAmount;
   const borrowedSol =userBorrowDataDetails.borrowedAmount; 
-  const newToken = borrowedToken+curveBaseToken;
-  const newSol = borrowedSol+curveBaseSol;
-  const dSol = newSol-((newSol*newToken)/(newToken+newBorrowToken))
-  return  Number((Number(dSol)*rate).toFixed(0));
+  const oldToken = curveBaseToken;
+  const oldSol = curveBaseSol;
+  const newToken = oldToken-(newBorrowToken+borrowedToken)
+  const newSol = (oldSol*oldToken)/(newToken)
+  const dSol = newSol - oldSol;
+  return  Number((Number(dSol)*rate - Number(borrowedSol)).toFixed(0));
 }
 
 
