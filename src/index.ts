@@ -1105,9 +1105,30 @@ public pumplend_culcuate_max_borrow(userBorrowDataDetails:any,amount:number ,sta
   {
     ret = Number(Number(stakeStatus.totalStaked -stakeStatus.totalBorrowed).toFixed(0))
   }
-
   return ret;
 }
+
+public pumplend_culcuate_max_borrow_rate(userBorrowDataDetails:any,amount:number , rate : number = 0.7 )
+{
+ 
+  if(!userBorrowDataDetails || !userBorrowDataDetails?.collateralAmount || !userBorrowDataDetails?.borrowedAmount)
+  {
+    userBorrowDataDetails = {
+      collateralAmount:BigInt(0),
+      borrowedAmount:BigInt(0),
+    }
+  }
+  const newBorrowToken = BigInt(amount);
+
+  const borrowedToken =userBorrowDataDetails.collateralAmount;
+  const borrowedSol =userBorrowDataDetails.borrowedAmount; 
+  const newToken = borrowedToken+curveBaseToken;
+  const newSol = borrowedSol+curveBaseSol;
+  const dSol = newSol-((newSol*newToken)/(newToken+newBorrowToken))
+  let ret =  Number((Number(dSol)*rate).toFixed(0));
+  return ret;
+}
+
 
 public pumplend_culcuate_max_leverage(userBorrowDataDetails:any,amount:number,curve:any)
 {
@@ -1199,12 +1220,12 @@ public pumplend_estimate_interest(userBorrowDataDetails:any,interestRate?:number
     ) 
   * Number(userBorrowDataDetails.borrowedAmount))
 
+  const maxSol = (this.pumplend_culcuate_max_borrow_rate({},userBorrowDataDetails.collateralAmount,0.8));
+  const dt = (maxSol-Number(userBorrowDataDetails.borrowedAmount)) / (
+    Number(userBorrowDataDetails.borrowedAmount) * (ir /86400)
+  )
   ret.liquiteTime = Math.floor(
-    Number(userBorrowDataDetails.lastUpdated) + 
-    (
-      1/
-      (7 * (ir /86400))
-    )
+    Number(userBorrowDataDetails.lastUpdated) + dt
   )
 
   ret.liquiteRemainingTime = Math.floor(

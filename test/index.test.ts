@@ -65,9 +65,9 @@ test("🍺 Test Data Fetch", async () => {
     console.log(
       "Account information ::",kp.publicKey.toBase58()
     )
-    console.log(
-      lend.tryGetUserAccounts(kp.publicKey)
-    )
+    // console.log(
+    //   lend.tryGetUserAccounts(kp.publicKey)
+    // )
     console.log(
       "Get some data ::",
       await lend.tryGetUserStakingData(connection,testUser),
@@ -86,6 +86,13 @@ test("🍺 Test Data Fetch", async () => {
       await mainnet.getAccountInfo(testUser)
     )
   
+    const borrowData = await lend.tryGetUserBorrowData(connection,devnetToken,kp.publicKey)
+    console.log(
+      "Position Liquite & Interest ::",lend.pumplend_estimate_interest(
+        borrowData
+      )
+    )
+
   }else{
     console.info("⚠Test Module Off")
   }
