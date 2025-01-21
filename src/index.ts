@@ -1108,7 +1108,7 @@ public pumplend_culcuate_max_borrow(userBorrowDataDetails:any,amount:number ,sta
   return ret;
 }
 
-public pumplend_culcuate_max_borrow_rate(userBorrowDataDetails:any,amount:number , rate : number = 0.7 )
+public pumplend_culcuate_max_borrow_rate(userBorrowDataDetails:any,amount:number , rate  = 0.7 )
 {
  
   if(!userBorrowDataDetails || !userBorrowDataDetails?.collateralAmount || !userBorrowDataDetails?.borrowedAmount)
@@ -1125,8 +1125,7 @@ public pumplend_culcuate_max_borrow_rate(userBorrowDataDetails:any,amount:number
   const newToken = borrowedToken+curveBaseToken;
   const newSol = borrowedSol+curveBaseSol;
   const dSol = newSol-((newSol*newToken)/(newToken+newBorrowToken))
-  let ret =  Number((Number(dSol)*rate).toFixed(0));
-  return ret;
+  return  Number((Number(dSol)*rate).toFixed(0));
 }
 
 
