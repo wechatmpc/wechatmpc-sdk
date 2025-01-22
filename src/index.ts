@@ -166,54 +166,6 @@ function getMaxBorrowAmountByAMM(
     }
 }
 
-// function getMaxBorrowAmountByAMM(
-//   reserves: Reserves,
-//   baseVirtualSolReserves: bigint,
-//   baseVirtualTokenReserves: bigint,
-//   collateralAmount: bigint,
-//   remaining_collateral_amount:bigint
-// ) {
-//   try {
-//     const x0 = BigInt(baseVirtualSolReserves);
-//     const y0 = BigInt(baseVirtualTokenReserves);
-//     const x1 = BigInt(reserves.solReserves);
-//     const y1 = BigInt(reserves.tokenReserves);
-//     const k = BigInt(collateralAmount) - BigInt(remaining_collateral_amount);
-
-//     const a = ((y1 - y0) * BigInt(7)) / BigInt(10);
-//     const b =
-//       ((x0 * y1 * BigInt(7)) / BigInt(10)) - x1 * y0 + k * y1 - k * y0;
-//     const c = k * x0 * y1;
-
-//     const b_4ac = b * b - a * c * BigInt(4);
-
-//     if (b_4ac < BigInt(0)) {
-//       throw new Error("MathOverflow: Negative square root");
-//     }
-
-//     const b_4ac_sqrt = sqrtBigInt(b_4ac);
-
-//     console.log("a : ",a)
-
-//     const xn = (-b - b_4ac_sqrt) / (a * BigInt(2));
-
-//     const yn = y1 - (x1 * y1) / (x1 + xn);
-
-//     if (xn < BigInt(0) || yn < BigInt(0)) {
-//       throw new Error("MathOverflow: Resulting values are negative");
-//     }
-
-//     return {
-//       sol:xn, 
-//       token:yn
-//     };
-//   } catch (error) {
-//     console.error("Error calculating max borrow amount:", error);
-//     // return new Error("MathError: Unable to calculate borrow amount");
-//     return false;
-//   }
-// }
-
 //Args class
 class BaseArgs extends Struct {
   amount: BN;
@@ -251,6 +203,7 @@ export class Pumplend {
   pumpLendProgramId = new PublicKey("6m6ixFjRGq7HYAPsu8YtyEauJm8EE8pzA3mqESt5cGYf");
   pumpLendVault = new PublicKey("zzntY4AtoZhQE8UnfUoiR4HKK2iv8wjW4fHVTCzKnn6")
   pumpfunProgramId = new PublicKey("6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P");
+  pumplendPoolTokenAuthorityWsolAccount = new PublicKey("8RBsaCpxixG8CxnN87dBMKSZFhr9pmFxodRZ3ZTtHfna")
   network = "mainnet"
   public constructor(network ?: string,pumpLendProgramId?:PublicKey,pumpfunProgramId?:PublicKey,pumpLendVault?:PublicKey) {
     if(pumpLendProgramId)
@@ -814,14 +767,14 @@ public async repay(amount:number , token:PublicKey , user:PublicKey ,referral ?:
 }
 
 
-public async leverage_pump(amount:number , token:PublicKey , user:PublicKey ,referral ?:PublicKey)
+public async leverage_pump(amount:number , token:PublicKey , user:PublicKey ,referral ?:PublicKey,minAmountsOut = 0)
 {
   try {
 
     const stakeAmountInLamports = new BN(amount);
 
-    const args = new BaseArgs({ amount: stakeAmountInLamports });
-    const stakeBuffer = serialize(BaseArgsSchema, args);
+    const args = new PumpBuyArgs({ amount: stakeAmountInLamports , maxSolCost : minAmountsOut });
+    const argBuffer = serialize(PumpBuyArgsSchema, args);
 
     const baseInfo = this.tryGetUserAccounts(user);
     const userTokenAccount = this.tryGetUserTokenAccount(user,token);
@@ -839,7 +792,7 @@ public async leverage_pump(amount:number , token:PublicKey , user:PublicKey ,ref
       const data = Buffer.concat(
           [
               new Uint8Array(sighash("global","borrow_loop_pump")),
-              stakeBuffer
+              argBuffer
           ]
       )
         const instruction = new TransactionInstruction({
@@ -891,9 +844,6 @@ public async leverage_pump(amount:number , token:PublicKey , user:PublicKey ,ref
 public async close_pump( token:PublicKey , user:PublicKey ,referral ?:PublicKey ,liquitor ?:PublicKey)
 {
   try {
-
-
-
     const baseInfo = this.tryGetUserAccounts(user);
     const userTokenAccounts = this.tryGetUserTokenAccounts(user,token)
     const tokenPumpAccounts = this.tryGetPumpTokenDataAccount(token)
@@ -931,6 +881,81 @@ public async close_pump( token:PublicKey , user:PublicKey ,referral ?:PublicKey 
               { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
               { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
               { pubkey: this.pumpfunProgramId, isSigner: false, isWritable: true },
+              //Remnaining Account
+
+              { pubkey: tokenPumpAccounts.global, isSigner: false, isWritable: false },
+              { pubkey: tokenPumpAccounts.feeRecipient, isSigner: false, isWritable: true },
+              { pubkey: tokenPumpAccounts.mint, isSigner: false, isWritable: true },
+              { pubkey: tokenPumpAccounts.bondingCurve, isSigner: false, isWritable: true },
+              { pubkey: tokenPumpAccounts.associatedBondingCurve, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
+              { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+              { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+              { pubkey: tokenPumpAccounts.rent, isSigner: false, isWritable: false },
+              { pubkey: tokenPumpAccounts.eventAuthority, isSigner: false, isWritable: false },
+              { pubkey: referral, isSigner: false, isWritable: true },
+              { pubkey: this.pumpLendVault, isSigner: false, isWritable: true },//vault
+              
+            ],
+          programId: this.pumpLendProgramId,
+          data: data
+      });
+      const transaction = new Transaction().add(instruction);
+      transaction.feePayer = user;
+
+      return transaction;
+
+      
+      } catch (err: any) {
+        console.error('Error fetching system config data:', err);
+        return false;
+      }
+}
+
+
+public async close_raydium( token:PublicKey , pool:PublicKey, user:PublicKey ,referral ?:PublicKey ,liquitor ?:PublicKey)
+{
+  try {
+    const baseInfo = this.tryGetUserAccounts(user);
+    const userTokenAccounts = this.tryGetUserTokenAccounts(user,token)
+    const tokenPumpAccounts = this.tryGetPumpTokenDataAccount(token)
+
+    if(!referral)
+    {
+      referral = user
+    }
+    if(!liquitor)
+    {
+      liquitor = user
+    }
+    const userTokenAccount = this.tryGetUserTokenAccount(liquitor,token);
+    if(!userTokenAccount || !userTokenAccounts)
+    {
+      return false;
+    }
+
+      const data = Buffer.concat(
+          [
+              new Uint8Array(sighash("global","liquidate_pump")),
+          ]
+      )
+        const instruction = new TransactionInstruction({
+          keys: [
+              { pubkey: liquitor, isSigner: true, isWritable: true },
+              { pubkey: user, isSigner: false, isWritable: true },
+              { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.userBorrowData, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
+              { pubkey: this.pumplendPoolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
+              { pubkey: baseInfo.systemConfig, isSigner: false, isWritable: true },
+              { pubkey: token, isSigner: false, isWritable: true },
+              { pubkey: new PublicKey("So11111111111111111111111111111111111111112"), isSigner: false, isWritable: true },
+              { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+              { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+              { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+              { pubkey: pool, isSigner: false, isWritable: true },
               //Remnaining Account
 
               { pubkey: tokenPumpAccounts.global, isSigner: false, isWritable: false },
@@ -1184,19 +1209,19 @@ public pumplend_culcuate_max_leverage(userBorrowDataDetails:any,amount:number,cu
     BigInt(amount*0.1)
   )
 
-  console.log(
-    {
-      solReserves:curve.solReserves,
-      tokenReserves:curve.tokenReserves,
-      realTokenReserves:curve.realTokenReserves,
-    },
-    newSol,
-    newToken,
-    userBorrowDataDetails.borrowedAmount,
-    userBorrowDataDetails.collateralAmount,
-    newBorrowSol,
-    BigInt(amount*0.1)
-  )
+  // console.log(
+  //   {
+  //     solReserves:curve.solReserves,
+  //     tokenReserves:curve.tokenReserves,
+  //     realTokenReserves:curve.realTokenReserves,
+  //   },
+  //   newSol,
+  //   newToken,
+  //   userBorrowDataDetails.borrowedAmount,
+  //   userBorrowDataDetails.collateralAmount,
+  //   newBorrowSol,
+  //   BigInt(amount*0.1)
+  // )
   return dToken;
 }
 
@@ -1216,10 +1241,11 @@ public pumplend_estimate_interest(userBorrowDataDetails:any,interestRate?:number
   ret.interest = Math.floor(
     (
     (
-      (Date.now()/1000) - Number(userBorrowDataDetails.lastUpdated)) //Dt . in second
-    / 86400*ir
+      (Date.now()/1000) - Number(userBorrowDataDetails.lastUpdated)
+    ) //Dt . in second
+    / 86400
     ) 
-  * Number(userBorrowDataDetails.borrowedAmount))
+    *ir* Number(userBorrowDataDetails.borrowedAmount))
 
   const maxSol = (this.pumplend_culcuate_max_borrow_rate({},userBorrowDataDetails.collateralAmount,0.8));
   const dt = (maxSol-Number(userBorrowDataDetails.borrowedAmount)) / (

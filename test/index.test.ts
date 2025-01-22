@@ -40,7 +40,7 @@ const sk = process.env.SK?process.env.SK:"";
 const kp = Keypair.fromSecretKey(bs58.decode(sk));
 const testUser = kp.publicKey;
 const mainnetToken = new PublicKey('Eq1Wrk62j2F2tLf9XfdBssYJVr5k8oLJx3pqEL1rpump')
-const devnetToken = new PublicKey('4u4aGDJRdyB5CA9sNxzjCP4YWxuqHMzxPFgnPV1cFgK3')
+const devnetToken = new PublicKey('HojdYxukWVZZ38hiZHoqxQD2uHfN2JoZ1EsDeMQDSchD')
 
 const testControl = {
   dataFetch : false,
@@ -53,8 +53,9 @@ const testControl = {
   pumplendRepay : false,
   pumplendLeverage : false,
   pumplendCloseInPump : false,
+  pumplendCloseInRay : false,
   pumplendMaxBorrowCul:false,
-  pumplendMaxLeverageCul:true
+  pumplendMaxLeverageCul:false
 }
 
 
@@ -68,6 +69,10 @@ test("🍺 Test Data Fetch", async () => {
     // console.log(
     //   lend.tryGetUserAccounts(kp.publicKey)
     // )
+    console.log(
+      "get user borrow account",
+      lend.tryGetUserTokenAccounts(kp.publicKey,devnetToken)
+    )
     console.log(
       "Get some data ::",
       await lend.tryGetUserStakingData(connection,testUser),
@@ -88,6 +93,8 @@ test("🍺 Test Data Fetch", async () => {
   
     const borrowData = await lend.tryGetUserBorrowData(connection,devnetToken,kp.publicKey)
     console.log(
+      borrowData,
+
       "Position Liquite & Interest ::",lend.pumplend_estimate_interest(
         borrowData
       )
@@ -361,6 +368,41 @@ test("🍺 Test Pumplend Close Position", async () => {
       return false;
     }
 
+    const repayTx = await lend.close_raydium(devnetToken,kp.publicKey,kp.publicKey);
+    const tx = new Transaction();
+    if(repayTx)
+      {
+        tx.add(
+          repayTx
+        )
+        console.log(
+          "Pumplend repay devnet ::",tx,
+          await connection.sendTransaction(tx,[kp])
+        )
+      }else{
+        console.log(repayTx)
+      }
+
+  }else{
+    console.info("⚠Test Module Off")
+  }
+})
+
+test("🍺 Test Raydium Close Position", async () => {
+  if(testControl.pumplendCloseInRay)
+  {
+    const lend = new Pumplend("devnet")
+    const borrowData = await lend.tryGetUserBorrowData(connection,devnetToken,kp.publicKey)
+    console.log(
+      "Borrow data ::",borrowData
+    )
+  
+
+    if(!borrowData)
+    {
+      return false;
+    }
+
     const repayTx = await lend.close_pump(devnetToken,kp.publicKey,kp.publicKey);
     const tx = new Transaction();
     if(repayTx)
@@ -380,6 +422,7 @@ test("🍺 Test Pumplend Close Position", async () => {
     console.info("⚠Test Module Off")
   }
 })
+
 
 test("🍺 Test Max Borrow", async () => {
   if(testControl.pumplendMaxBorrowCul)
