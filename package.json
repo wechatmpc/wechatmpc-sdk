@@ -14,6 +14,7 @@
   "author": "wikig",
   "license": "LicenseRef-LICENSE",
   "dependencies": {
+    "@raydium-io/raydium-sdk": "^1.3.1-beta.58",
     "@solana/spl-token": "^0.4.9",
     "@solana/web3.js": "^1.95.8",
     "bn.js": "^5.2.1",

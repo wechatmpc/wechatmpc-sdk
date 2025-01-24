@@ -30,6 +30,15 @@ getAccount,
 createAssociatedTokenAccountInstruction
 
 } from "@solana/spl-token";
+import {
+  LIQUIDITY_STATE_LAYOUT_V4,
+  Liquidity,
+  LiquidityPoolKeysV4,
+  MARKET_STATE_LAYOUT_V3,
+  Market,
+  SPL_MINT_LAYOUT,
+  DEVNET_PROGRAM_ID
+} from '@raydium-io/raydium-sdk'
 import { createHash } from 'crypto';
 import { serialize } from "borsh";
 
@@ -55,10 +64,80 @@ type Reserves = {
   realTokenReserves: bigint; // Real token reserves in the pool
 };
 
-type BuyTokenToSolResult = {
-  tokenAmountOut: bigint;
-  newBorrowAmount: bigint;
-};
+function loopMaxBuy(
+  amount : bigint,
+  curve:Reserves,
+  userBorrowDataDetails:any,
+  remaining_collateral_amount:bigint
+){
+  let finalSol = amount;
+  let finalToken = BigInt(0);
+  let lastBorrow = amount;
+  while(true)
+  {
+
+    //Buy
+    const estimate = pumpGetAmountsOut(lastBorrow,curve)
+    curve = estimate.newCurve;
+    finalToken += estimate.dToken;
+    lastBorrow = estimate.dToken
+
+    //Borrow 
+    const newBorrowToken = lastBorrow;
+    const borrowedToken =userBorrowDataDetails.collateralAmount;
+    const borrowedSol =userBorrowDataDetails.borrowedAmount; 
+
+    const oldToken = curveBaseToken-borrowedToken;
+    const oldSol = curveBaseSol+borrowedSol;
+
+    const newToken = oldToken-newBorrowToken
+    const newSol = (oldSol*oldToken)/(newToken)
+    const dSol = newSol - oldSol;
+    const fSol = BigInt((Number(dSol)*0.7 ).toFixed(0))
+    finalSol+=fSol;
+    userBorrowDataDetails.collateralAmount+=newBorrowToken;
+    userBorrowDataDetails.borrowedAmount+=fSol;
+    lastBorrow = fSol
+
+    if(lastBorrow <=remaining_collateral_amount )
+      {
+        return {
+          sol:finalSol, 
+          token:finalToken
+        }
+      }
+  }
+}
+function pumpGetAmountsOut(amount:bigint,curve:Reserves)
+{
+ 
+  if(!curve)
+    {
+      curve = {
+        solReserves:curveBaseSol,
+        tokenReserves:curveBaseToken,
+        realTokenReserves:BigInt(0),
+      }
+  }
+  const oldToken = curve.tokenReserves;
+  const oldSol = curve.solReserves;
+  const oldRealToken = curve.realTokenReserves;
+  
+  const newSol = oldSol+amount
+  const newToken = (oldSol*BigInt(oldToken))/(newSol)
+  const dToken = oldToken - newToken;
+  const newRealToken = oldRealToken+ dToken
+
+  return {
+    dToken,
+    newCurve:{
+      solReserves : newSol,
+      tokenReserves:newToken,
+      realTokenReserves:newRealToken
+    }
+  };
+}
+
 
 // Placeholder function for `buy_token_to_sol`, you need to implement its logic
 function buyTokenToSol(
@@ -80,25 +159,25 @@ function buyTokenToSol(
     (poolVirtualSolReserves + effectiveSolInput);
 
   const tokenAmountOut = poolVirtualTokenReserves - virtualTokenReserves;
-  console.log("Buy Token To Sol: token_output_amount:", tokenAmountOut.toString());
+  // console.log("Buy Token To Sol: token_output_amount:", tokenAmountOut.toString());
 
   // Calculate virtual SOL reserves
   const virtualSolReserves =
     (baseVirtualSolReserves * baseVirtualTokenReserves) /
     (baseVirtualTokenReserves + userCollateralAmount + tokenAmountOut);
 
-  console.log("virtual_sol_reserves:", virtualSolReserves.toString());
-  console.log("base_virtual_sol_reserves:", baseVirtualSolReserves.toString());
-  console.log("base_virtual_token_reserves:", baseVirtualTokenReserves.toString());
+  // console.log("virtual_sol_reserves:", virtualSolReserves.toString());
+  // console.log("base_virtual_sol_reserves:", baseVirtualSolReserves.toString());
+  // console.log("base_virtual_token_reserves:", baseVirtualTokenReserves.toString());
 
   // Calculate SOL delta and new borrow amount
   const solDelta = baseVirtualSolReserves - virtualSolReserves;
   const totalBorrowedAmount = (solDelta * BigInt(7)) / BigInt(10);
-  console.log("total_borrowed_amount:", totalBorrowedAmount.toString());
-  console.log("user_borrowed_amount:", userBorrowedAmount.toString());
+  // console.log("total_borrowed_amount:", totalBorrowedAmount.toString());
+  // console.log("user_borrowed_amount:", userBorrowedAmount.toString());
 
   const newBorrowAmount = totalBorrowedAmount - userBorrowedAmount;
-  console.log("new_borrow_amount:", newBorrowAmount.toString());
+  // console.log("new_borrow_amount:", newBorrowAmount.toString());
 
   return { tokenAmountOut, newBorrowAmount };
 }
@@ -125,7 +204,7 @@ function getMaxBorrowAmountByAMM(
   let poolVirtualTokenReserves = reserves.tokenReserves;
   let solInputAmount = collateralAmount;
 
-  for (let i = 0; i < 10; i++) {
+  for (let i = 0; i < 24; i++) {
     const { tokenAmountOut: _tokenAmountOut, newBorrowAmount: _newBorrowAmount } =
       buyTokenToSol(
         baseVirtualSolReserves,
@@ -162,9 +241,56 @@ function getMaxBorrowAmountByAMM(
     }catch(e:any)
       
     {
+      console.error(e)
       return false;
     }
 }
+
+
+async function raydiumFormatAmmKeysById(id: PublicKey, connection: Connection): Promise<LiquidityPoolKeysV4> {
+  const account = await connection.getAccountInfo(id)
+  if (account === null) throw Error(' get id info error ')
+  const info = LIQUIDITY_STATE_LAYOUT_V4.decode(account.data)
+
+  const marketId = info.marketId
+  const marketAccount = await connection.getAccountInfo(marketId)
+  if (marketAccount === null) throw Error(' get market info error')
+  const marketInfo = MARKET_STATE_LAYOUT_V3.decode(marketAccount.data)
+
+  const lpMint = info.lpMint
+  const lpMintAccount = await connection.getAccountInfo(lpMint)
+  if (lpMintAccount === null) throw Error(' get lp mint info error')
+  const lpMintInfo = SPL_MINT_LAYOUT.decode(lpMintAccount.data)
+
+  return {
+      id: new PublicKey(id),
+      baseMint: info.baseMint,
+      quoteMint: info.quoteMint,
+      lpMint: info.lpMint,
+      baseDecimals: info.baseDecimal.toNumber(),
+      quoteDecimals: info.quoteDecimal.toNumber(),
+      lpDecimals: lpMintInfo.decimals,
+      version: 4,
+      programId: account.owner,
+      authority: Liquidity.getAssociatedAuthority({ programId: account.owner }).publicKey,
+      openOrders: info.openOrders,
+      targetOrders: info.targetOrders,
+      baseVault: info.baseVault,
+      quoteVault: info.quoteVault,
+      withdrawQueue: info.withdrawQueue,
+      lpVault: info.lpVault,
+      marketVersion: 3,
+      marketProgramId: info.marketProgramId,
+      marketId: info.marketId,
+      marketAuthority: Market.getAssociatedAuthority({ programId: info.marketProgramId, marketId: info.marketId }).publicKey,
+      marketBaseVault: marketInfo.baseVault,
+      marketQuoteVault: marketInfo.quoteVault,
+      marketBids: marketInfo.bids,
+      marketAsks: marketInfo.asks,
+      marketEventQueue: marketInfo.eventQueue,
+      lookupTableAccount: PublicKey.default,
+  }
+  }
 
 //Args class
 class BaseArgs extends Struct {
@@ -200,11 +326,23 @@ const PumpBuyArgsSchema = new Map([
 
 //Major pumplend class
 export class Pumplend {
+  wsol =  new PublicKey("So11111111111111111111111111111111111111112")
   pumpLendProgramId = new PublicKey("6m6ixFjRGq7HYAPsu8YtyEauJm8EE8pzA3mqESt5cGYf");
   pumpLendVault = new PublicKey("zzntY4AtoZhQE8UnfUoiR4HKK2iv8wjW4fHVTCzKnn6")
   pumpfunProgramId = new PublicKey("6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P");
-  pumplendPoolTokenAuthorityWsolAccount = new PublicKey("8RBsaCpxixG8CxnN87dBMKSZFhr9pmFxodRZ3ZTtHfna")
   network = "mainnet"
+
+  systemAccounts = {
+    systemConfig:new PublicKey(0),
+    poolStakingData:new PublicKey(0),
+    poolTokenAuthority:new PublicKey(0),
+    poolTokenAuthorityWsolAccount:new PublicKey(0),
+  }
+
+  raydiumAccounts = {
+    ammProgram : new PublicKey("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8"),
+    
+  }
   public constructor(network ?: string,pumpLendProgramId?:PublicKey,pumpfunProgramId?:PublicKey,pumpLendVault?:PublicKey) {
     if(pumpLendProgramId)
     {
@@ -223,12 +361,52 @@ export class Pumplend {
     {
       this.network = network;
     }
-      return this;
+    const accs = this.tryGetSystemAccounts()
+    this.systemAccounts.systemConfig = accs.systemConfig;
+    this.systemAccounts.poolStakingData = accs.poolStakingData;
+    this.systemAccounts.poolTokenAuthority = accs.poolTokenAuthority;
+    this.systemAccounts.poolTokenAuthorityWsolAccount =  getAssociatedTokenAddressSync(
+      accs.poolTokenAuthority,
+      this.wsol
+  )
+    return this;
   }
 
 /**
  * Pumplend data fetch functions
  */
+
+public tryGetSystemAccounts()
+{
+
+  const systemConfig = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("system_config")
+      ],
+      this.pumpLendProgramId
+    )[0];
+
+  const poolStakingData = PublicKey.findProgramAddressSync(
+    [
+      Buffer.from("pool_staking_data")
+    ],
+    this.pumpLendProgramId
+  )[0];
+
+  const poolTokenAuthority = PublicKey.findProgramAddressSync(
+      [
+        Buffer.from("pool_token_authority")
+      ],
+      this.pumpLendProgramId
+    )[0];
+
+    return {
+      systemConfig,
+      poolStakingData,
+      poolTokenAuthority
+    }
+}
+
 
 public tryGetUserAccounts(user:PublicKey)
 {
@@ -841,6 +1019,113 @@ public async leverage_pump(amount:number , token:PublicKey , user:PublicKey ,ref
       }
 }
 
+public async leverage_raydium(connection:Connection,amount:number , token:PublicKey  , pool:PublicKey, user:PublicKey ,referral ?:PublicKey,minAmountsOut = 0 )
+{
+  // try {
+
+  //   const stakeAmountInLamports = new BN(amount);
+
+  //   const args = new PumpBuyArgs({ amount: stakeAmountInLamports , maxSolCost : minAmountsOut });
+  //   const argBuffer = serialize(PumpBuyArgsSchema, args);
+
+  //   const baseInfo = this.tryGetUserAccounts(user);
+  //   const userTokenAccount = this.tryGetUserTokenAccount(user,token);
+  //   const userTokenAccounts = this.tryGetUserTokenAccounts(user,token)
+
+  //   const poolTokenAuthorityTokenAccount = getAssociatedTokenAddressSync(
+  //     token,
+  //     this.systemAccounts.poolTokenAuthority
+  // )
+
+  //   const ray = await raydiumFormatAmmKeysById(
+  //     pool,connection
+  //   )
+  //   if(!userTokenAccount || !userTokenAccounts)
+  //   {
+  //     return false;
+  //   }
+  //   if(!referral)
+  //   {
+  //     referral = user
+  //   }
+
+  //     const data = Buffer.concat(
+  //         [
+  //             new Uint8Array(sighash("global","borrow_loop_pump")),
+  //             argBuffer
+  //         ]
+  //     )
+  //       const instruction = new TransactionInstruction({
+  //         keys: [
+  //             { pubkey: user, isSigner: true, isWritable: true },
+  //             { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
+  //             { pubkey: userTokenAccounts.userBorrowData, isSigner: false, isWritable: true },
+  //             { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
+  //             { pubkey: userTokenAccount, isSigner: false, isWritable: true },
+  //             { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
+  //             { pubkey: baseInfo.systemConfig, isSigner: false, isWritable: true },
+  //             { pubkey: token, isSigner: false, isWritable: true },
+  //             { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+  //             { pubkey: tokenPumpAccounts.bondingCurve, isSigner: false, isWritable: true },
+  //             { pubkey: this.raydiumAccounts.ammProgram, isSigner: false, isWritable: true },
+  //             { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+  //             { pubkey: this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
+  //             { pubkey: this.wsol, isSigner: false, isWritable: true },
+  //             { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+  //             { pubkey: this.pumpfunProgramId, isSigner: false, isWritable: true },
+
+  //             //Remnaining Account
+
+  //             //amm
+  //             //amm_authority
+  //             //amm_open_orders
+  //             //amm_coin_vault
+  //             //amm_pc_vault
+  //             { pubkey: ray.marketProgramId, isSigner: false, isWritable: true },
+  //             { pubkey: ray.market, isSigner: false, isWritable: true },
+  //             { pubkey: ray.market_bids, isSigner: false, isWritable: true },
+  //             { pubkey: ray.market_asks, isSigner: false, isWritable: true },
+  //             { pubkey: ray.marketEventQueue, isSigner: false, isWritable: true },
+  //             //market_coin_vault
+  //             //market_pc_vault
+  //             //market_vault_signer
+  //             //user_token_source
+  //             { pubkey: this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
+  //             //user_token_destination
+  //             { pubkey: poolTokenAuthorityTokenAccount, isSigner: false, isWritable: true },
+  //             //user_source_owner
+              
+  //             // { pubkey: tokenPumpAccounts.global, isSigner: false, isWritable: false },
+  //             // { pubkey: tokenPumpAccounts.feeRecipient, isSigner: false, isWritable: true },
+  //             // { pubkey: tokenPumpAccounts.mint, isSigner: false, isWritable: true },
+  //             // { pubkey: tokenPumpAccounts.bondingCurve, isSigner: false, isWritable: true },
+  //             // { pubkey: tokenPumpAccounts.associatedBondingCurve, isSigner: false, isWritable: true },
+  //             // { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
+  //             // { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
+  //             // { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+  //             // { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+  //             // { pubkey: tokenPumpAccounts.rent, isSigner: false, isWritable: false },
+  //             // { pubkey: tokenPumpAccounts.eventAuthority, isSigner: false, isWritable: false },
+  //             // { pubkey: referral, isSigner: false, isWritable: true },
+  //             // { pubkey: this.pumpLendVault, isSigner: false, isWritable: true },//vault
+  //           ],
+  //         programId: this.pumpLendProgramId,
+  //         data: data
+  //     });
+
+  //     const transaction = new Transaction().add(instruction);
+  //     transaction.feePayer = user;
+
+  //     return transaction;
+
+      
+  //     } catch (err: any) {
+  //       console.error('Error fetching system config data:', err);
+  //       return false;
+  //     }
+}
+
+
 public async close_pump( token:PublicKey , user:PublicKey ,referral ?:PublicKey ,liquitor ?:PublicKey)
 {
   try {
@@ -935,11 +1220,11 @@ public async close_raydium( token:PublicKey , pool:PublicKey, user:PublicKey ,re
       return false;
     }
 
-      const data = Buffer.concat(
-          [
-              new Uint8Array(sighash("global","liquidate_pump")),
-          ]
-      )
+    const data = Buffer.concat(
+        [
+            new Uint8Array(sighash("global","liquidate_pump")),
+        ]
+    )
         const instruction = new TransactionInstruction({
           keys: [
               { pubkey: liquitor, isSigner: true, isWritable: true },
@@ -948,10 +1233,10 @@ public async close_raydium( token:PublicKey , pool:PublicKey, user:PublicKey ,re
               { pubkey: userTokenAccounts.userBorrowData, isSigner: false, isWritable: true },
               { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
               { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
-              { pubkey: this.pumplendPoolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
+              { pubkey: this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
               { pubkey: baseInfo.systemConfig, isSigner: false, isWritable: true },
               { pubkey: token, isSigner: false, isWritable: true },
-              { pubkey: new PublicKey("So11111111111111111111111111111111111111112"), isSigner: false, isWritable: true },
+              { pubkey: this.wsol, isSigner: false, isWritable: true },
               { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
               { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
               { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
@@ -1108,6 +1393,11 @@ public txTips( tx:Transaction , simulate:any , tips = 500 ,unitPrice =20000 )
   return tx;
 }
 
+public pump_get_amounts_out(amount:bigint,curve?:any)
+{
+  return pumpGetAmountsOut(amount,curve)
+}
+
 public pumplend_culcuate_max_borrow(userBorrowDataDetails:any,amount:number ,stakeStatus?:any )
 {
  
@@ -1169,8 +1459,9 @@ public pumplend_culcuate_max_leverage(userBorrowDataDetails:any,amount:number,cu
     if(!curve || !curve?.virtualSolReserves || !curve?.virtualTokenReserves)
       {
         curve = {
-          solReserves:BigInt(0),
-          tokenReserves:BigInt(0),
+          solReserves:curveBaseSol,
+          tokenReserves:curveBaseToken,
+          realTokenReserves:BigInt(0),
         }
       }else{
         curve = {
@@ -1193,20 +1484,27 @@ public pumplend_culcuate_max_leverage(userBorrowDataDetails:any,amount:number,cu
   {
     e;
   }
-  const newToken = borrowedToken+curveBaseToken;
+  const newToken = curveBaseToken-borrowedToken;
   const newSol = borrowedSol+curveBaseSol;
-  const dToken = getMaxBorrowAmountByAMM(
-    {
-      solReserves:curve.solReserves,
-      tokenReserves:curve.tokenReserves,
-      realTokenReserves:curve.realTokenReserves,
-    },
-    newSol,
-    newToken,
-    userBorrowDataDetails.borrowedAmount,
-    userBorrowDataDetails.collateralAmount,
-    newBorrowSol,
-    BigInt(amount*0.1)
+  // const dToken = getMaxBorrowAmountByAMM(
+  //   {
+  //     solReserves:curve.solReserves,
+  //     tokenReserves:curve.tokenReserves,
+  //     realTokenReserves:curve.realTokenReserves,
+  //   },
+  //   newSol,
+  //   newToken,
+  //   userBorrowDataDetails.borrowedAmount,
+  //   userBorrowDataDetails.collateralAmount,
+  //   newBorrowSol,
+  //   // BigInt(amount*0.1)
+  //   BigInt(1e7)
+  // )
+  const dToken=  loopMaxBuy(
+    BigInt(amount),
+    curve,
+    userBorrowDataDetails,
+    BigInt(1e7)
   )
 
   // console.log(
