@@ -44,7 +44,7 @@ import { serialize } from "borsh";
 
 // @ts-ignore
 import BN from 'bn.js';
-
+import { example  , addressFetch}from "@pumplend/raydium-js-sdk"
 //Setting 
 const curveBaseToken = BigInt('1073000000000000')
 const curveBaseSol = BigInt('30000000000')
@@ -245,52 +245,6 @@ function getMaxBorrowAmountByAMM(
       return false;
     }
 }
-
-
-async function raydiumFormatAmmKeysById(id: PublicKey, connection: Connection): Promise<LiquidityPoolKeysV4> {
-  const account = await connection.getAccountInfo(id)
-  if (account === null) throw Error(' get id info error ')
-  const info = LIQUIDITY_STATE_LAYOUT_V4.decode(account.data)
-
-  const marketId = info.marketId
-  const marketAccount = await connection.getAccountInfo(marketId)
-  if (marketAccount === null) throw Error(' get market info error')
-  const marketInfo = MARKET_STATE_LAYOUT_V3.decode(marketAccount.data)
-
-  const lpMint = info.lpMint
-  const lpMintAccount = await connection.getAccountInfo(lpMint)
-  if (lpMintAccount === null) throw Error(' get lp mint info error')
-  const lpMintInfo = SPL_MINT_LAYOUT.decode(lpMintAccount.data)
-
-  return {
-      id: new PublicKey(id),
-      baseMint: info.baseMint,
-      quoteMint: info.quoteMint,
-      lpMint: info.lpMint,
-      baseDecimals: info.baseDecimal.toNumber(),
-      quoteDecimals: info.quoteDecimal.toNumber(),
-      lpDecimals: lpMintInfo.decimals,
-      version: 4,
-      programId: account.owner,
-      authority: Liquidity.getAssociatedAuthority({ programId: account.owner }).publicKey,
-      openOrders: info.openOrders,
-      targetOrders: info.targetOrders,
-      baseVault: info.baseVault,
-      quoteVault: info.quoteVault,
-      withdrawQueue: info.withdrawQueue,
-      lpVault: info.lpVault,
-      marketVersion: 3,
-      marketProgramId: info.marketProgramId,
-      marketId: info.marketId,
-      marketAuthority: Market.getAssociatedAuthority({ programId: info.marketProgramId, marketId: info.marketId }).publicKey,
-      marketBaseVault: marketInfo.baseVault,
-      marketQuoteVault: marketInfo.quoteVault,
-      marketBids: marketInfo.bids,
-      marketAsks: marketInfo.asks,
-      marketEventQueue: marketInfo.eventQueue,
-      lookupTableAccount: PublicKey.default,
-  }
-  }
 
 //Args class
 class BaseArgs extends Struct {
@@ -1021,108 +975,105 @@ public async leverage_pump(amount:number , token:PublicKey , user:PublicKey ,ref
 
 public async leverage_raydium(connection:Connection,amount:number , token:PublicKey  , pool:PublicKey, user:PublicKey ,referral ?:PublicKey,minAmountsOut = 0 )
 {
-  // try {
+ 
+  try {
 
-  //   const stakeAmountInLamports = new BN(amount);
+    const stakeAmountInLamports = new BN(amount);
 
-  //   const args = new PumpBuyArgs({ amount: stakeAmountInLamports , maxSolCost : minAmountsOut });
-  //   const argBuffer = serialize(PumpBuyArgsSchema, args);
+    const args = new PumpBuyArgs({ amount: stakeAmountInLamports , maxSolCost : minAmountsOut });
+    const argBuffer = serialize(PumpBuyArgsSchema, args);
 
-  //   const baseInfo = this.tryGetUserAccounts(user);
-  //   const userTokenAccount = this.tryGetUserTokenAccount(user,token);
-  //   const userTokenAccounts = this.tryGetUserTokenAccounts(user,token)
+    const baseInfo = this.tryGetUserAccounts(user);
+    const userTokenAccount = this.tryGetUserTokenAccount(user,token);
+    const userTokenAccounts = this.tryGetUserTokenAccounts(user,token)
+    const tokenPumpAccounts = this.tryGetPumpTokenDataAccount(token)
+    const poolTokenAuthorityTokenAccount = getAssociatedTokenAddressSync(
+      token,
+      this.systemAccounts.poolTokenAuthority,
+      true
+  )
+  const poolInfo =  await addressFetch(pool , user, this.systemAccounts.poolTokenAuthorityWsolAccount,poolTokenAuthorityTokenAccount,connection);
+    if(!userTokenAccount || !userTokenAccounts)
+    {
+      return false;
+    }
+    if(!referral)
+    {
+      referral = user
+    }
 
-  //   const poolTokenAuthorityTokenAccount = getAssociatedTokenAddressSync(
-  //     token,
-  //     this.systemAccounts.poolTokenAuthority
-  // )
+      const data = Buffer.concat(
+          [
+              new Uint8Array(sighash("global","borrow_loop_raydium")),
+              argBuffer
+          ]
+      )
+        const instruction = new TransactionInstruction({
+          keys: [
+              { pubkey: user, isSigner: true, isWritable: true },
+              { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.userBorrowData, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccount, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
+              { pubkey: baseInfo.systemConfig, isSigner: false, isWritable: true },
+              { pubkey: token, isSigner: false, isWritable: true },
+              { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+              { pubkey: tokenPumpAccounts.bondingCurve, isSigner: false, isWritable: true },
+              { pubkey: this.raydiumAccounts.ammProgram, isSigner: false, isWritable: true },
+              { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+              { pubkey: this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
+              { pubkey: this.wsol, isSigner: false, isWritable: true },
+              { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+              { pubkey: this.pumpfunProgramId, isSigner: false, isWritable: true },
 
-  //   const ray = await raydiumFormatAmmKeysById(
-  //     pool,connection
-  //   )
-  //   if(!userTokenAccount || !userTokenAccounts)
-  //   {
-  //     return false;
-  //   }
-  //   if(!referral)
-  //   {
-  //     referral = user
-  //   }
-
-  //     const data = Buffer.concat(
-  //         [
-  //             new Uint8Array(sighash("global","borrow_loop_pump")),
-  //             argBuffer
-  //         ]
-  //     )
-  //       const instruction = new TransactionInstruction({
-  //         keys: [
-  //             { pubkey: user, isSigner: true, isWritable: true },
-  //             { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
-  //             { pubkey: userTokenAccounts.userBorrowData, isSigner: false, isWritable: true },
-  //             { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
-  //             { pubkey: userTokenAccount, isSigner: false, isWritable: true },
-  //             { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
-  //             { pubkey: baseInfo.systemConfig, isSigner: false, isWritable: true },
-  //             { pubkey: token, isSigner: false, isWritable: true },
-  //             { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
-  //             { pubkey: tokenPumpAccounts.bondingCurve, isSigner: false, isWritable: true },
-  //             { pubkey: this.raydiumAccounts.ammProgram, isSigner: false, isWritable: true },
-  //             { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
-  //             { pubkey: this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
-  //             { pubkey: this.wsol, isSigner: false, isWritable: true },
-  //             { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-  //             { pubkey: this.pumpfunProgramId, isSigner: false, isWritable: true },
-
-  //             //Remnaining Account
-
-  //             //amm
-  //             //amm_authority
-  //             //amm_open_orders
-  //             //amm_coin_vault
-  //             //amm_pc_vault
-  //             { pubkey: ray.marketProgramId, isSigner: false, isWritable: true },
-  //             { pubkey: ray.market, isSigner: false, isWritable: true },
-  //             { pubkey: ray.market_bids, isSigner: false, isWritable: true },
-  //             { pubkey: ray.market_asks, isSigner: false, isWritable: true },
-  //             { pubkey: ray.marketEventQueue, isSigner: false, isWritable: true },
-  //             //market_coin_vault
-  //             //market_pc_vault
-  //             //market_vault_signer
-  //             //user_token_source
-  //             { pubkey: this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
-  //             //user_token_destination
-  //             { pubkey: poolTokenAuthorityTokenAccount, isSigner: false, isWritable: true },
-  //             //user_source_owner
+              //Remnaining Account
+             
+              { pubkey:  poolInfo.AmmId, isSigner: false, isWritable: true },
+              //amm_authority
+              { pubkey:  poolInfo.AmmAuthority, isSigner: false, isWritable: true },
+              //amm_open_orders
+              { pubkey:  poolInfo.AmmOpenOrders, isSigner: false, isWritable: true },
+              //amm_coin_vault
+              { pubkey:  this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
               
-  //             // { pubkey: tokenPumpAccounts.global, isSigner: false, isWritable: false },
-  //             // { pubkey: tokenPumpAccounts.feeRecipient, isSigner: false, isWritable: true },
-  //             // { pubkey: tokenPumpAccounts.mint, isSigner: false, isWritable: true },
-  //             // { pubkey: tokenPumpAccounts.bondingCurve, isSigner: false, isWritable: true },
-  //             // { pubkey: tokenPumpAccounts.associatedBondingCurve, isSigner: false, isWritable: true },
-  //             // { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
-  //             // { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
-  //             // { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-  //             // { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
-  //             // { pubkey: tokenPumpAccounts.rent, isSigner: false, isWritable: false },
-  //             // { pubkey: tokenPumpAccounts.eventAuthority, isSigner: false, isWritable: false },
-  //             // { pubkey: referral, isSigner: false, isWritable: true },
-  //             // { pubkey: this.pumpLendVault, isSigner: false, isWritable: true },//vault
-  //           ],
-  //         programId: this.pumpLendProgramId,
-  //         data: data
-  //     });
+              //amm_pc_vault
+              { pubkey:  poolTokenAuthorityTokenAccount, isSigner: false, isWritable: true },
 
-  //     const transaction = new Transaction().add(instruction);
-  //     transaction.feePayer = user;
+              { pubkey: poolInfo.SerumProgramId, isSigner: false, isWritable: true },
+              { pubkey: poolInfo.SerumMarket, isSigner: false, isWritable: true },
+              { pubkey: poolInfo.SerumBids, isSigner: false, isWritable: true },
+              { pubkey: poolInfo.SerumAsks, isSigner: false, isWritable: true },
+              { pubkey: poolInfo.SerumEventQueue, isSigner: false, isWritable: true },
+              //market_coin_vault
+              { pubkey: poolInfo.SerumCoinVaultAccount, isSigner: false, isWritable: true },
+              //market_pc_vault
+              { pubkey: poolInfo.SerumPcVaultAccount, isSigner: false, isWritable: true },
+              //market_vault_signer
+              { pubkey: poolInfo.SerumVaultSigner, isSigner: false, isWritable: true },
+              //user_token_source
+              { pubkey: this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
+              //user_token_destination
+              { pubkey: poolTokenAuthorityTokenAccount, isSigner: false, isWritable: true },
+              //user_source_owner
+              { pubkey: this.systemAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
+              { pubkey: referral, isSigner: false, isWritable: true },
+              { pubkey: this.pumpLendVault, isSigner: false, isWritable: true },//vault
+            ],
+          programId: this.pumpLendProgramId,
+          data: data
+      });
 
-  //     return transaction;
+      const transaction = new Transaction().add(instruction);
+      transaction.feePayer = user;
+
+      return transaction;
 
       
-  //     } catch (err: any) {
-  //       console.error('Error fetching system config data:', err);
-  //       return false;
-  //     }
+      } catch (err: any) {
+        console.error('Error fetching system config data:', err);
+        return false;
+      }
 }
 
 

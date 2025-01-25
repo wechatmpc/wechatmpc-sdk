@@ -52,11 +52,11 @@ const testControl = {
   pumplendBorrow : false,
   pumplendRepay : false,
   pumplendLeverage : false,
-  pumplendLeverageRay : false,
+  pumplendLeverageRay : true,
   pumplendCloseInPump : false,
   pumplendCloseInRay : false,
   pumplendMaxBorrowCul:false,
-  pumplendMaxLeverageCul:true
+  pumplendMaxLeverageCul:false
 }
 
 
@@ -356,29 +356,32 @@ test("🍺 Test Pumplend Leverage", async () => {
 test("🍺 Test Pumplend Leverage", async () => {
   if(testControl.pumplendLeverageRay)
   {
-    // const lend = new Pumplend("devnet")
-    // const borrowTx = await lend.leverage_raydium(connection,1e8,devnetToken,devnetToken,kp.publicKey,kp.publicKey);
-    // const tx = new Transaction();
-    // const associatedUser = getAssociatedTokenAddressSync(devnetToken, kp.publicKey);
-    // const pumpTokenAccountTxn = createAssociatedTokenAccountInstruction(kp.publicKey,associatedUser,kp.publicKey,devnetToken)
-    // if(borrowTx)
-    //   {
-    //     // tx.add(
-    //     //   pumpTokenAccountTxn
-    //     // )
-    //     tx.add(
-    //       borrowTx
-    //     )
-    //     console.log(
-    //       "Pumplend leverage devnet ::",tx,
-    //       await connection.sendTransaction(tx,[kp])
-    //     )
-    //   }else{
-    //     console.log(borrowTx)
-    //   }
-    // console.log(
-    //   "Borrow data ::",await lend.tryGetUserBorrowData(connection,devnetToken,kp.publicKey)
-    // )
+    const lend = new Pumplend("devnet")
+
+    const borrowTx = await lend.leverage_raydium(
+      connection,1e8,devnetToken,new PublicKey('885XNKURTvUzw8CcrM6oGnjP2wht5VgA4U7P44ExHvc9'),kp.publicKey,kp.publicKey
+    )
+    const tx = new Transaction();
+    const associatedUser = getAssociatedTokenAddressSync(devnetToken, kp.publicKey);
+    const pumpTokenAccountTxn = createAssociatedTokenAccountInstruction(kp.publicKey,associatedUser,kp.publicKey,devnetToken)
+    if(borrowTx)
+      {
+        // tx.add(
+        //   pumpTokenAccountTxn
+        // )
+        tx.add(
+          borrowTx
+        )
+        console.log(
+          "Pumplend leverage devnet ::",tx,
+          await connection.sendTransaction(tx,[kp])
+        )
+      }else{
+        console.log(borrowTx)
+      }
+    console.log(
+      "Borrow data ::",await lend.tryGetUserBorrowData(connection,devnetToken,kp.publicKey)
+    )
   
   }else{
     console.info("⚠Test Module Off")
@@ -492,15 +495,8 @@ test("🍺 Test Max Leverage", async () => {
   if(testControl.pumplendMaxLeverageCul)
   {
     const lend = new Pumplend("devnet")
-    // const borrowData =  await lend.tryGetUserBorrowData(connection,devnetToken,kp.publicKey);
-    // const curve = await lend.tryGetPumpTokenCurveData(connection,devnetToken)
-    const borrowData = {}
-    const curve = {
-      virtualSolReserves:BigInt('71000000000'),
-      virtualTokenReserves:BigInt('453380281690140'),
-      realTokenReserves:BigInt('619619718309860'),
-    }
-    // const curve = {}
+    const borrowData =  await lend.tryGetUserBorrowData(connection,devnetToken,kp.publicKey);
+    const curve = await lend.tryGetPumpTokenCurveData(connection,devnetToken)
     console.log("borrowData",borrowData,curve)
     console.log(
       "Max Leverage ::",lend.pumplend_culcuate_max_leverage(
