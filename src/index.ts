@@ -27,7 +27,8 @@ createInitializeMintInstruction,
 getMintLen,
 getOrCreateAssociatedTokenAccount,
 getAccount,
-createAssociatedTokenAccountInstruction
+createAssociatedTokenAccountInstruction,
+NATIVE_MINT
 
 } from "@solana/spl-token";
 import {
@@ -328,7 +329,7 @@ const PumpBuyArgsSchema = new Map([
 
 //Major pumplend class
 export class Pumplend {
-  wsol =  new PublicKey("So11111111111111111111111111111111111111112")
+  wsol =  NATIVE_MINT
   pumpLendProgramId = new PublicKey("DxejhMrcwyuFuZKHvj7n2wJcMdZgnADy15fnAgDPt2f2");
   pumpLendVault = new PublicKey("zzntY4AtoZhQE8UnfUoiR4HKK2iv8wjW4fHVTCzKnn6")
   pumpfunProgramId = new PublicKey("6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P");
@@ -367,8 +368,11 @@ export class Pumplend {
     this.systemAccounts.poolStakingData = accs.poolStakingData;
     this.systemAccounts.poolTokenAuthority = accs.poolTokenAuthority;
     this.systemAccounts.poolTokenAuthorityWsolAccount =  getAssociatedTokenAddressSync(
+      this.wsol,
       accs.poolTokenAuthority,
-      this.wsol
+      true,
+      TOKEN_PROGRAM_ID,
+      ASSOCIATED_TOKEN_PROGRAM_ID
   )
     return this;
   }
@@ -1055,14 +1059,74 @@ public async leverage_raydium(connection:Connection,amount:number , token:Public
               argBuffer
           ]
       )
+
+      console.log(
+        [
+          // { pubkey: user, isSigner: true, isWritable: true },
+          // { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
+          // { pubkey: userTokenAccounts.userBorrowData, isSigner: false, isWritable: true },
+          // { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
+          // // { pubkey: userTokenAccount, isSigner: false, isWritable: true },
+          // // { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
+          // { pubkey: baseInfo.systemConfig, isSigner: false, isWritable: true },
+          // { pubkey: token, isSigner: false, isWritable: true },
+          // { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+          
+          { pubkey: tokenPumpAccounts.bondingCurve, isSigner: false, isWritable: true },
+          // { pubkey: this.raydiumAccounts.ammProgram, isSigner: false, isWritable: true },
+          { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+          // { pubkey: this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
+          { pubkey: this.wsol, isSigner: false, isWritable: true },
+          { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
+          
+
+          //Remnaining Account
+         
+          { pubkey:  poolInfo.AmmId, isSigner: false, isWritable: true },
+          //amm_authority
+          { pubkey:  poolInfo.AmmAuthority, isSigner: false, isWritable: true },
+          //amm_open_orders
+          { pubkey:  poolInfo.AmmOpenOrders, isSigner: false, isWritable: true },
+          //amm_coin_vault
+          { pubkey:  this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
+          //amm_pc_vault
+          { pubkey:  poolTokenAuthorityTokenAccount, isSigner: false, isWritable: true },
+          { pubkey: poolInfo.SerumProgramId, isSigner: false, isWritable: true },
+          { pubkey: poolInfo.SerumMarket, isSigner: false, isWritable: true },
+          { pubkey: poolInfo.SerumBids, isSigner: false, isWritable: true },
+          { pubkey: poolInfo.SerumAsks, isSigner: false, isWritable: true },
+          { pubkey: poolInfo.SerumEventQueue, isSigner: false, isWritable: true },
+          //market_coin_vault
+          { pubkey: poolInfo.SerumCoinVaultAccount, isSigner: false, isWritable: true },
+          //market_pc_vault
+          { pubkey: poolInfo.SerumPcVaultAccount, isSigner: false, isWritable: true },
+          //market_vault_signer
+          { pubkey: poolInfo.SerumVaultSigner, isSigner: false, isWritable: true },
+          //user_token_source
+          { pubkey: this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
+          //user_token_destination
+          { pubkey: poolTokenAuthorityTokenAccount, isSigner: false, isWritable: true },
+          //user_source_owner
+          { pubkey: baseInfo.poolTokenAuthority, isSigner: false, isWritable: true },
+          { pubkey: this.systemAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
+          // { pubkey: this.pumpfunProgramId, isSigner: false, isWritable: true },
+
+
+          { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
+          { pubkey: this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
+          { pubkey: this.raydiumAccounts.ammProgram, isSigner: false, isWritable: true },
+          { pubkey: referral, isSigner: false, isWritable: true },
+          { pubkey: this.pumpLendVault, isSigner: false, isWritable: true },//vault
+        ]
+      )
         const instruction = new TransactionInstruction({
           keys: [
               { pubkey: user, isSigner: true, isWritable: true },
               { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
               { pubkey: userTokenAccounts.userBorrowData, isSigner: false, isWritable: true },
               { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
-              { pubkey: userTokenAccount, isSigner: false, isWritable: true },
-              { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
+              // { pubkey: userTokenAccount, isSigner: false, isWritable: true },
+              // { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
               { pubkey: baseInfo.systemConfig, isSigner: false, isWritable: true },
               { pubkey: token, isSigner: false, isWritable: true },
               { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
@@ -1070,7 +1134,7 @@ public async leverage_raydium(connection:Connection,amount:number , token:Public
               // { pubkey: tokenPumpAccounts.bondingCurve, isSigner: false, isWritable: true },
               // { pubkey: this.raydiumAccounts.ammProgram, isSigner: false, isWritable: true },
               { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
-              { pubkey: this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
+              // { pubkey: this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
               { pubkey: this.wsol, isSigner: false, isWritable: true },
               { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
               
@@ -1084,10 +1148,8 @@ public async leverage_raydium(connection:Connection,amount:number , token:Public
               { pubkey:  poolInfo.AmmOpenOrders, isSigner: false, isWritable: true },
               //amm_coin_vault
               { pubkey:  this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
-              
               //amm_pc_vault
               { pubkey:  poolTokenAuthorityTokenAccount, isSigner: false, isWritable: true },
-
               { pubkey: poolInfo.SerumProgramId, isSigner: false, isWritable: true },
               { pubkey: poolInfo.SerumMarket, isSigner: false, isWritable: true },
               { pubkey: poolInfo.SerumBids, isSigner: false, isWritable: true },
@@ -1104,8 +1166,13 @@ public async leverage_raydium(connection:Connection,amount:number , token:Public
               //user_token_destination
               { pubkey: poolTokenAuthorityTokenAccount, isSigner: false, isWritable: true },
               //user_source_owner
+              // { pubkey: baseInfo.poolTokenAuthority, isSigner: false, isWritable: true },
               { pubkey: this.systemAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
               // { pubkey: this.pumpfunProgramId, isSigner: false, isWritable: true },
+
+
+              { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
+              { pubkey: this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
               { pubkey: this.raydiumAccounts.ammProgram, isSigner: false, isWritable: true },
               { pubkey: referral, isSigner: false, isWritable: true },
               { pubkey: this.pumpLendVault, isSigner: false, isWritable: true },//vault
@@ -1227,13 +1294,13 @@ public async close_raydium( connection:Connection,token:PublicKey , pool:PublicK
       return false;
     }
     console.log(
-              // { pubkey: liquitor, isSigner: true, isWritable: true },
-              // { pubkey: user, isSigner: false, isWritable: true },
-              // { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
-              // { pubkey: userTokenAccounts.userBorrowData, isSigner: false, isWritable: true },
-              // { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
-              // { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
-              // { pubkey: this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
+              { pubkey: liquitor, isSigner: true, isWritable: true },
+              { pubkey: user, isSigner: false, isWritable: true },
+              { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.userBorrowData, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
+              { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
+              { pubkey: this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
               { pubkey: baseInfo.systemConfig, isSigner: false, isWritable: true },
               // { pubkey: token, isSigner: false, isWritable: true },
               // { pubkey: this.wsol, isSigner: false, isWritable: true },

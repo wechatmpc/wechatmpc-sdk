@@ -52,9 +52,9 @@ const testControl = {
   pumplendBorrow : false,
   pumplendRepay : false,
   pumplendLeverage : false,
-  pumplendLeverageRay : false,
+  pumplendLeverageRay : true,
   pumplendCloseInPump : false,
-  pumplendCloseInRay : true,
+  pumplendCloseInRay : false,
   pumplendMaxBorrowCul:false,
   pumplendMaxLeverageCul:false
 }
@@ -116,23 +116,23 @@ test("🍺 Test Pumpfun Buy Mainnet", async () => {
    * Test Pump Token Buy
    * 
    */
-  const lend = new Pumplend()
-  const associatedUser = getAssociatedTokenAddressSync(mainnetToken, testUser);
-  const pumpTokenAccountTxn = createAssociatedTokenAccountInstruction(testUser,associatedUser,testUser,mainnetToken)
+  const lend = new Pumplend("devnet")
+  const associatedUser = getAssociatedTokenAddressSync(devnetToken, testUser);
+  const pumpTokenAccountTxn = createAssociatedTokenAccountInstruction(testUser,associatedUser,testUser,devnetToken)
   let tx = new Transaction();
   // tx.add(pumpTokenAccountTxn);
   const pumpBuyTokenTx = await lend.pump_buy(
-    mainnetToken,
+    devnetToken,
     testUser,
-    1e7,
-    1e8
+    21598402000000,
+    1e9
   );
   if(pumpBuyTokenTx)
   {
     tx.add(
       pumpBuyTokenTx
     )
-    const simulate = await mainnet.simulateTransaction(
+    const simulate = await connection.simulateTransaction(
       tx,
       [kp],
       [kp.publicKey],
@@ -142,7 +142,7 @@ test("🍺 Test Pumpfun Buy Mainnet", async () => {
     tx = lend.txTips(tx,simulate,500);
     console.log(
       "Pump token buy mainnet ::",tx,
-      await mainnet.sendTransaction(tx,[kp])
+      await connection.sendTransaction(tx,[kp])
     )
   }else{
     console.log(pumpBuyTokenTx)
