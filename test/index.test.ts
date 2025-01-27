@@ -52,11 +52,11 @@ const testControl = {
   pumplendBorrow : false,
   pumplendRepay : false,
   pumplendLeverage : false,
-  pumplendLeverageRay : true,
+  pumplendLeverageRay : false,
   pumplendCloseInPump : false,
   pumplendCloseInRay : false,
   pumplendMaxBorrowCul:false,
-  pumplendMaxLeverageCul:false
+  pumplendMaxLeverageCul:true
 }
 
 
@@ -495,14 +495,17 @@ test("🍺 Test Max Leverage", async () => {
   if(testControl.pumplendMaxLeverageCul)
   {
     const lend = new Pumplend("devnet")
-    const borrowData =  await lend.tryGetUserBorrowData(connection,devnetToken,kp.publicKey);
-    const curve = await lend.tryGetPumpTokenCurveData(connection,devnetToken)
+    // const borrowData =  await lend.tryGetUserBorrowData(connection,devnetToken,kp.publicKey);
+    // const curve = await lend.tryGetPumpTokenCurveData(connection,devnetToken)
+    // console.log("CurveData :: ",curve)
+    const borrowData =  {};
+    const curve = {}
     console.log("borrowData",borrowData,curve)
     console.log(
       "Max Leverage ::",lend.pumplend_culcuate_max_leverage(
         borrowData
        ,
-        1*1e9
+        10*1e9
         ,
         curve
       )

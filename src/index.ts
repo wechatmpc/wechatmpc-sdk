@@ -63,27 +63,40 @@ type Reserves = {
   tokenReserves: bigint; // Token reserves in the pool
   realTokenReserves: bigint; // Real token reserves in the pool
 };
-
+function deepCopyReserves(reserves: Reserves): Reserves {
+  return {
+    solReserves: reserves.solReserves,
+    tokenReserves: reserves.tokenReserves,
+    realTokenReserves: reserves.realTokenReserves,
+  };
+}
 function loopMaxBuy(
   amount : bigint,
   curve:Reserves,
   userBorrowDataDetails:any,
   remaining_collateral_amount:bigint
 ){
-  let finalSol = amount;
+  let finalSol = amount*BigInt(99)/BigInt(100);
   let finalToken = BigInt(0);
-  let lastBorrow = amount;
+  let lastBorrow = amount*BigInt(99)/BigInt(100);
+
+  const oldCurve = deepCopyReserves(curve)
+  const oldUserBorrowDataDetails = {
+    collateralAmount:userBorrowDataDetails.collateralAmount,
+    borrowedAmount:userBorrowDataDetails.borrowedAmount
+  }
   while(true)
   {
-
+    console.log("Loop borrow :: ",Number(lastBorrow)/1e9)
     //Buy
     const estimate = pumpGetAmountsOut(lastBorrow,curve)
     curve = estimate.newCurve;
     finalToken += estimate.dToken;
-    lastBorrow = estimate.dToken
+    let lastBuy = estimate.dToken*BigInt(99)/BigInt(100);
+    // lastBorrow = estimate.dToken*BigInt(99)/BigInt(100);
 
     //Borrow 
-    const newBorrowToken = lastBorrow;
+    const newBorrowToken = lastBuy;
     const borrowedToken =userBorrowDataDetails.collateralAmount;
     const borrowedSol =userBorrowDataDetails.borrowedAmount; 
 
@@ -93,7 +106,7 @@ function loopMaxBuy(
     const newToken = oldToken-newBorrowToken
     const newSol = (oldSol*oldToken)/(newToken)
     const dSol = newSol - oldSol;
-    const fSol = BigInt((Number(dSol)*0.7 ).toFixed(0))
+    const fSol = BigInt(dSol*BigInt(70)/BigInt(100))
     finalSol+=fSol;
     userBorrowDataDetails.collateralAmount+=newBorrowToken;
     userBorrowDataDetails.borrowedAmount+=fSol;
@@ -101,6 +114,9 @@ function loopMaxBuy(
 
     if(lastBorrow <=remaining_collateral_amount )
       {
+        // const testCurve = pumpGetAmountsOut(finalSol,oldCurve)
+        // const testBorrow = bondingCurveGetTokenWorth(oldUserBorrowDataDetails,finalToken)
+        // console.log(testCurve,testBorrow)
         return {
           sol:finalSol, 
           token:finalToken
@@ -108,6 +124,36 @@ function loopMaxBuy(
       }
   }
 }
+
+function bondingCurveGetTokenWorth(userBorrowDataDetails:any,amount:bigint )
+{
+ 
+  if(!userBorrowDataDetails || !userBorrowDataDetails?.collateralAmount || !userBorrowDataDetails?.borrowedAmount)
+  {
+    userBorrowDataDetails = {
+      collateralAmount:BigInt(0),
+      borrowedAmount:BigInt(0),
+    }
+  }
+  const newBorrowToken = amount;
+  const borrowedToken =userBorrowDataDetails.collateralAmount;
+  const borrowedSol =userBorrowDataDetails.borrowedAmount; 
+  const oldToken = curveBaseToken;
+  const oldSol = curveBaseSol;
+  const newToken = oldToken-(newBorrowToken+borrowedToken)
+  const newSol = (oldSol*oldToken)/(newToken)
+  const dSol = newSol - oldSol;
+  const _dSol = dSol - borrowedSol;
+
+  return {
+    dSol:_dSol,
+    newCurve:{
+      solReserves : newSol,
+      tokenReserves:newToken,
+    }
+  };
+}
+
 function pumpGetAmountsOut(amount:bigint,curve:Reserves)
 {
  
@@ -151,7 +197,7 @@ function buyTokenToSol(
 ): { tokenAmountOut: bigint; newBorrowAmount: bigint } {
   // Calculate effective SOL input after fees
   const effectiveSolInput = (solInputAmount * BigInt(99)) / BigInt(100);
-  console.log("sol_input_amount:", effectiveSolInput.toString());
+  // console.log("sol_input_amount:", effectiveSolInput.toString());
 
   // Calculate virtual token reserves
   const virtualTokenReserves =
@@ -205,6 +251,7 @@ function getMaxBorrowAmountByAMM(
   let solInputAmount = collateralAmount;
 
   for (let i = 0; i < 24; i++) {
+    console.log("Loop Debug :: ",Number(solInputAmount)/1e9)
     const { tokenAmountOut: _tokenAmountOut, newBorrowAmount: _newBorrowAmount } =
       buyTokenToSol(
         baseVirtualSolReserves,
@@ -281,7 +328,7 @@ const PumpBuyArgsSchema = new Map([
 //Major pumplend class
 export class Pumplend {
   wsol =  new PublicKey("So11111111111111111111111111111111111111112")
-  pumpLendProgramId = new PublicKey("6m6ixFjRGq7HYAPsu8YtyEauJm8EE8pzA3mqESt5cGYf");
+  pumpLendProgramId = new PublicKey("DxejhMrcwyuFuZKHvj7n2wJcMdZgnADy15fnAgDPt2f2");
   pumpLendVault = new PublicKey("zzntY4AtoZhQE8UnfUoiR4HKK2iv8wjW4fHVTCzKnn6")
   pumpfunProgramId = new PublicKey("6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P");
   network = "mainnet"
@@ -992,7 +1039,7 @@ public async leverage_raydium(connection:Connection,amount:number , token:Public
       this.systemAccounts.poolTokenAuthority,
       true
   )
-  const poolInfo =  await addressFetch(pool , user, this.systemAccounts.poolTokenAuthorityWsolAccount,poolTokenAuthorityTokenAccount,connection);
+  const poolInfo =  await addressFetch(pool , user, this.systemAccounts.poolTokenAuthorityWsolAccount,poolTokenAuthorityTokenAccount,connection,this.network);
     if(!userTokenAccount || !userTokenAccounts)
     {
       return false;
@@ -1019,13 +1066,14 @@ public async leverage_raydium(connection:Connection,amount:number , token:Public
               { pubkey: baseInfo.systemConfig, isSigner: false, isWritable: true },
               { pubkey: token, isSigner: false, isWritable: true },
               { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+              
               { pubkey: tokenPumpAccounts.bondingCurve, isSigner: false, isWritable: true },
-              { pubkey: this.raydiumAccounts.ammProgram, isSigner: false, isWritable: true },
+              // { pubkey: this.raydiumAccounts.ammProgram, isSigner: false, isWritable: true },
               { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
               { pubkey: this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
               { pubkey: this.wsol, isSigner: false, isWritable: true },
               { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-              { pubkey: this.pumpfunProgramId, isSigner: false, isWritable: true },
+              
 
               //Remnaining Account
              
@@ -1057,6 +1105,8 @@ public async leverage_raydium(connection:Connection,amount:number , token:Public
               { pubkey: poolTokenAuthorityTokenAccount, isSigner: false, isWritable: true },
               //user_source_owner
               { pubkey: this.systemAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
+              // { pubkey: this.pumpfunProgramId, isSigner: false, isWritable: true },
+              { pubkey: this.raydiumAccounts.ammProgram, isSigner: false, isWritable: true },
               { pubkey: referral, isSigner: false, isWritable: true },
               { pubkey: this.pumpLendVault, isSigner: false, isWritable: true },//vault
             ],
@@ -1412,7 +1462,8 @@ public pumplend_culcuate_max_leverage(userBorrowDataDetails:any,amount:number,cu
         curve = {
           solReserves:curveBaseSol,
           tokenReserves:curveBaseToken,
-          realTokenReserves:BigInt(0),
+          realTokenReserves:curveBaseToken,
+          // realTokenReserves:BigInt(0),
         }
       }else{
         curve = {
@@ -1437,26 +1488,26 @@ public pumplend_culcuate_max_leverage(userBorrowDataDetails:any,amount:number,cu
   }
   const newToken = curveBaseToken-borrowedToken;
   const newSol = borrowedSol+curveBaseSol;
-  // const dToken = getMaxBorrowAmountByAMM(
-  //   {
-  //     solReserves:curve.solReserves,
-  //     tokenReserves:curve.tokenReserves,
-  //     realTokenReserves:curve.realTokenReserves,
-  //   },
-  //   newSol,
-  //   newToken,
-  //   userBorrowDataDetails.borrowedAmount,
-  //   userBorrowDataDetails.collateralAmount,
-  //   newBorrowSol,
-  //   // BigInt(amount*0.1)
-  //   BigInt(1e7)
-  // )
-  const dToken=  loopMaxBuy(
-    BigInt(amount),
-    curve,
-    userBorrowDataDetails,
+  const dToken = getMaxBorrowAmountByAMM(
+    {
+      solReserves:curve.solReserves,
+      tokenReserves:curve.tokenReserves,
+      realTokenReserves:curve.realTokenReserves,
+    },
+    newSol,
+    newToken,
+    userBorrowDataDetails.borrowedAmount,
+    userBorrowDataDetails.collateralAmount,
+    newBorrowSol,
+    // BigInt(amount*0.1)
     BigInt(1e7)
   )
+  // const dToken=  loopMaxBuy(
+  //   BigInt(amount),
+  //   curve,
+  //   userBorrowDataDetails,
+  //   BigInt(1e7)
+  // )
 
   // console.log(
   //   {
