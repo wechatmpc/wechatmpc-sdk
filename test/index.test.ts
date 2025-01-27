@@ -52,11 +52,11 @@ const testControl = {
   pumplendBorrow : false,
   pumplendRepay : false,
   pumplendLeverage : false,
-  pumplendLeverageRay : false,
+  pumplendLeverageRay : true,
   pumplendCloseInPump : false,
   pumplendCloseInRay : false,
   pumplendMaxBorrowCul:false,
-  pumplendMaxLeverageCul:true
+  pumplendMaxLeverageCul:false
 }
 
 
@@ -405,7 +405,7 @@ test("🍺 Test Pumplend Close Position", async () => {
       return false;
     }
 
-    const repayTx = await lend.close_raydium(devnetToken,kp.publicKey,kp.publicKey);
+    const repayTx = await lend.close_pump(devnetToken,kp.publicKey,kp.publicKey);
     const tx = new Transaction();
     if(repayTx)
       {
@@ -429,6 +429,8 @@ test("🍺 Test Raydium Close Position", async () => {
   if(testControl.pumplendCloseInRay)
   {
     const lend = new Pumplend("devnet")
+    // console.log("Try log sth ")
+    // console.log(devnetToken.toBase58(),kp.publicKey.toBase58())
     const borrowData = await lend.tryGetUserBorrowData(connection,devnetToken,kp.publicKey)
     console.log(
       "Borrow data ::",borrowData
@@ -440,7 +442,7 @@ test("🍺 Test Raydium Close Position", async () => {
       return false;
     }
 
-    const repayTx = await lend.close_pump(devnetToken,kp.publicKey,kp.publicKey);
+    const repayTx = await lend.close_raydium(connection,devnetToken,new PublicKey('885XNKURTvUzw8CcrM6oGnjP2wht5VgA4U7P44ExHvc9'),kp.publicKey,kp.publicKey);
     const tx = new Transaction();
     if(repayTx)
       {

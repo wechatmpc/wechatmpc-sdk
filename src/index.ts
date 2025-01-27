@@ -85,14 +85,15 @@ function loopMaxBuy(
     collateralAmount:userBorrowDataDetails.collateralAmount,
     borrowedAmount:userBorrowDataDetails.borrowedAmount
   }
-  while(true)
+  const t = true
+  while(t)
   {
     console.log("Loop borrow :: ",Number(lastBorrow)/1e9)
     //Buy
     const estimate = pumpGetAmountsOut(lastBorrow,curve)
     curve = estimate.newCurve;
     finalToken += estimate.dToken;
-    let lastBuy = estimate.dToken*BigInt(99)/BigInt(100);
+    const lastBuy = estimate.dToken*BigInt(99)/BigInt(100);
     // lastBorrow = estimate.dToken*BigInt(99)/BigInt(100);
 
     //Borrow 
@@ -342,7 +343,6 @@ export class Pumplend {
 
   raydiumAccounts = {
     ammProgram : new PublicKey("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8"),
-    
   }
   public constructor(network ?: string,pumpLendProgramId?:PublicKey,pumpfunProgramId?:PublicKey,pumpLendVault?:PublicKey) {
     if(pumpLendProgramId)
@@ -1067,7 +1067,7 @@ public async leverage_raydium(connection:Connection,amount:number , token:Public
               { pubkey: token, isSigner: false, isWritable: true },
               { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
               
-              { pubkey: tokenPumpAccounts.bondingCurve, isSigner: false, isWritable: true },
+              // { pubkey: tokenPumpAccounts.bondingCurve, isSigner: false, isWritable: true },
               // { pubkey: this.raydiumAccounts.ammProgram, isSigner: false, isWritable: true },
               { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
               { pubkey: this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
@@ -1200,12 +1200,19 @@ public async close_pump( token:PublicKey , user:PublicKey ,referral ?:PublicKey 
 }
 
 
-public async close_raydium( token:PublicKey , pool:PublicKey, user:PublicKey ,referral ?:PublicKey ,liquitor ?:PublicKey)
+public async close_raydium( connection:Connection,token:PublicKey , pool:PublicKey, user:PublicKey ,referral ?:PublicKey ,liquitor ?:PublicKey)
 {
   try {
     const baseInfo = this.tryGetUserAccounts(user);
+    const userTokenAccount = this.tryGetUserTokenAccount(user,token);
     const userTokenAccounts = this.tryGetUserTokenAccounts(user,token)
     const tokenPumpAccounts = this.tryGetPumpTokenDataAccount(token)
+    const poolTokenAuthorityTokenAccount = getAssociatedTokenAddressSync(
+      token,
+      this.systemAccounts.poolTokenAuthority,
+      true
+  )
+  const poolInfo =  await addressFetch(pool , user, this.systemAccounts.poolTokenAuthorityWsolAccount,poolTokenAuthorityTokenAccount,connection,this.network);
 
     if(!referral)
     {
@@ -1215,11 +1222,25 @@ public async close_raydium( token:PublicKey , pool:PublicKey, user:PublicKey ,re
     {
       liquitor = user
     }
-    const userTokenAccount = this.tryGetUserTokenAccount(liquitor,token);
     if(!userTokenAccount || !userTokenAccounts)
     {
       return false;
     }
+    console.log(
+              // { pubkey: liquitor, isSigner: true, isWritable: true },
+              // { pubkey: user, isSigner: false, isWritable: true },
+              // { pubkey: baseInfo.poolStakingData, isSigner: false, isWritable: true },
+              // { pubkey: userTokenAccounts.userBorrowData, isSigner: false, isWritable: true },
+              // { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
+              // { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
+              // { pubkey: this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
+              { pubkey: baseInfo.systemConfig, isSigner: false, isWritable: true },
+              // { pubkey: token, isSigner: false, isWritable: true },
+              // { pubkey: this.wsol, isSigner: false, isWritable: true },
+              // { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+              // { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
+              // { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }
+    )
 
     const data = Buffer.concat(
         [
@@ -1241,23 +1262,41 @@ public async close_raydium( token:PublicKey , pool:PublicKey, user:PublicKey ,re
               { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
               { pubkey: ASSOCIATED_TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
               { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-              { pubkey: pool, isSigner: false, isWritable: true },
+              // { pubkey: pool, isSigner: false, isWritable: true },
               //Remnaining Account
+             
+              { pubkey:  poolInfo.AmmId, isSigner: false, isWritable: true },
+              //amm_authority
+              { pubkey:  poolInfo.AmmAuthority, isSigner: false, isWritable: true },
+              //amm_open_orders
+              { pubkey:  poolInfo.AmmOpenOrders, isSigner: false, isWritable: true },
+              //amm_coin_vault
+              { pubkey:  this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
+              
+              //amm_pc_vault
+              { pubkey:  poolTokenAuthorityTokenAccount, isSigner: false, isWritable: true },
 
-              { pubkey: tokenPumpAccounts.global, isSigner: false, isWritable: false },
-              { pubkey: tokenPumpAccounts.feeRecipient, isSigner: false, isWritable: true },
-              { pubkey: tokenPumpAccounts.mint, isSigner: false, isWritable: true },
-              { pubkey: tokenPumpAccounts.bondingCurve, isSigner: false, isWritable: true },
-              { pubkey: tokenPumpAccounts.associatedBondingCurve, isSigner: false, isWritable: true },
-              { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
-              { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
-              { pubkey: SystemProgram.programId, isSigner: false, isWritable: false },
-              { pubkey: TOKEN_PROGRAM_ID, isSigner: false, isWritable: true },
-              { pubkey: tokenPumpAccounts.rent, isSigner: false, isWritable: false },
-              { pubkey: tokenPumpAccounts.eventAuthority, isSigner: false, isWritable: false },
+              { pubkey: poolInfo.SerumProgramId, isSigner: false, isWritable: true },
+              { pubkey: poolInfo.SerumMarket, isSigner: false, isWritable: true },
+              { pubkey: poolInfo.SerumBids, isSigner: false, isWritable: true },
+              { pubkey: poolInfo.SerumAsks, isSigner: false, isWritable: true },
+              { pubkey: poolInfo.SerumEventQueue, isSigner: false, isWritable: true },
+              //market_coin_vault
+              { pubkey: poolInfo.SerumCoinVaultAccount, isSigner: false, isWritable: true },
+              //market_pc_vault
+              { pubkey: poolInfo.SerumPcVaultAccount, isSigner: false, isWritable: true },
+              //market_vault_signer
+              { pubkey: poolInfo.SerumVaultSigner, isSigner: false, isWritable: true },
+              //user_token_source
+              { pubkey: this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
+              //user_token_destination
+              { pubkey: poolTokenAuthorityTokenAccount, isSigner: false, isWritable: true },
+              //user_source_owner
+              { pubkey: this.systemAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
+              // { pubkey: this.pumpfunProgramId, isSigner: false, isWritable: true },
+              { pubkey: this.raydiumAccounts.ammProgram, isSigner: false, isWritable: true },
               { pubkey: referral, isSigner: false, isWritable: true },
               { pubkey: this.pumpLendVault, isSigner: false, isWritable: true },//vault
-              
             ],
           programId: this.pumpLendProgramId,
           data: data
