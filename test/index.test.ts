@@ -54,7 +54,7 @@ const testControl = {
   pumplendLeverage : false,
   pumplendLeverageRay : false,
   pumplendCloseInPump : false,
-  pumplendCloseInRay : true,
+  pumplendCloseInRay : false,
   pumplendMaxBorrowCul:false,
   pumplendMaxLeverageCul:false
 }

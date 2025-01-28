@@ -1351,15 +1351,6 @@ public async close_raydium( connection:Connection,token:PublicKey , pool:PublicK
           programId: this.pumpLendProgramId,
           data: data
       });
-
-      console.log(
-        [
-          { pubkey: userTokenAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
-          { pubkey: poolTokenAuthorityTokenAccount, isSigner: false, isWritable: true },
-          { pubkey: this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
-          { pubkey: token, isSigner: false, isWritable: true },
-        ]
-      )
       const transaction = new Transaction().add(instruction);
       transaction.feePayer = user;
 
