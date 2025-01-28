@@ -52,9 +52,9 @@ const testControl = {
   pumplendBorrow : false,
   pumplendRepay : false,
   pumplendLeverage : false,
-  pumplendLeverageRay : true,
+  pumplendLeverageRay : false,
   pumplendCloseInPump : false,
-  pumplendCloseInRay : false,
+  pumplendCloseInRay : true,
   pumplendMaxBorrowCul:false,
   pumplendMaxLeverageCul:false
 }
