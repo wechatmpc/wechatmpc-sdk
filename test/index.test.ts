@@ -57,7 +57,7 @@ const testControl = {
   pumplendCloseInRay : false,
   pumplendMaxBorrowCul:false,
   pumplendMaxLeverageCul:false,
-  contractInit:true,
+  contractInit:false,
 }
 
 
@@ -201,7 +201,7 @@ test("🍺 Test Pumplend Stake", async () => {
     console.log(
 
     );
-    const stakeTx = await lend.stake(1e8,kp.publicKey,kp.publicKey);
+    const stakeTx = await lend.stake(1e9,kp.publicKey,kp.publicKey);
     const tx = new Transaction();
     if(stakeTx)
       {

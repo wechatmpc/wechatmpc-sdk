@@ -362,7 +362,7 @@ const InitArgsSchema = new Map([
 //Major pumplend class
 export class Pumplend {
   wsol =  NATIVE_MINT
-  pumpLendProgramId = new PublicKey("DxejhMrcwyuFuZKHvj7n2wJcMdZgnADy15fnAgDPt2f2");
+  pumpLendProgramId = new PublicKey("3H39yWShVgHCTxfFbp3e2RdGmhcAW16CoNAMoeo4b2mx");
   pumpLendVault = new PublicKey("zzntY4AtoZhQE8UnfUoiR4HKK2iv8wjW4fHVTCzKnn6")
   pumpfunProgramId = new PublicKey("6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P");
   network = "mainnet"
@@ -1164,11 +1164,10 @@ public async leverage_raydium(connection:Connection,amount:number , token:Public
               { pubkey:  poolInfo.AmmAuthority, isSigner: false, isWritable: true },
               //amm_open_orders
               { pubkey:  poolInfo.AmmOpenOrders, isSigner: false, isWritable: true },
-              { pubkey: tokenPumpAccounts.bondingCurve, isSigner: false, isWritable: true },
               //amm_coin_vault
-              { pubkey:  this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
+              { pubkey:  poolInfo.PoolCoinTokenAccount, isSigner: false, isWritable: true },
               //amm_pc_vault
-              { pubkey:  poolTokenAuthorityTokenAccount, isSigner: false, isWritable: true },
+              { pubkey:  poolInfo.PoolPcTokenAccount, isSigner: false, isWritable: true },
               { pubkey: poolInfo.SerumProgramId, isSigner: false, isWritable: true },
               { pubkey: poolInfo.SerumMarket, isSigner: false, isWritable: true },
               { pubkey: poolInfo.SerumBids, isSigner: false, isWritable: true },
@@ -1181,15 +1180,15 @@ public async leverage_raydium(connection:Connection,amount:number , token:Public
               //market_vault_signer
               { pubkey: poolInfo.SerumVaultSigner, isSigner: false, isWritable: true },
               //user_token_source
-              { pubkey: this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
+              { pubkey: poolInfo.UserSourceTokenAccount, isSigner: false, isWritable: true },
               //user_token_destination
-              { pubkey: poolTokenAuthorityTokenAccount, isSigner: false, isWritable: true },
+              { pubkey: poolInfo.UserDestTokenAccount, isSigner: false, isWritable: true },
               //user_source_owner
               // { pubkey: baseInfo.poolTokenAuthority, isSigner: false, isWritable: true },
               { pubkey: this.systemAccounts.poolTokenAuthority, isSigner: false, isWritable: true },
               // { pubkey: this.pumpfunProgramId, isSigner: false, isWritable: true },
 
-
+              { pubkey: tokenPumpAccounts.bondingCurve, isSigner: false, isWritable: true },
               { pubkey: userTokenAccounts.poolTokenAccount, isSigner: false, isWritable: true },
               { pubkey: this.systemAccounts.poolTokenAuthorityWsolAccount, isSigner: false, isWritable: true },
               { pubkey: this.raydiumAccounts.ammProgram, isSigner: false, isWritable: true },
