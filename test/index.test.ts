@@ -56,13 +56,15 @@ const testControl = {
   pumplendCloseInPump : false,
   pumplendCloseInRay : false,
   pumplendMaxBorrowCul:false,
-  pumplendMaxLeverageCul:false
+  pumplendMaxLeverageCul:false,
+  contractInit:true,
 }
 
 
 test("🍺 Test Data Fetch", async () => {
   if(testControl.dataFetch)
   {
+    // const lend = new Pumplend("devnet",new PublicKey("EZ1shj1LUqmKRms2snKoumCWYGDnwxwedpBgCQP7b9yV"))
     const lend = new Pumplend("devnet")
     console.log(
       "Account information ::",kp.publicKey.toBase58()
@@ -512,6 +514,35 @@ test("🍺 Test Max Leverage", async () => {
         curve
       )
     )
+  }else{
+    console.info("⚠Test Module Off")
+  }
+})
+
+test("🍺 Reinit Pumpmax Contract", async () => {
+  if(testControl.contractInit)
+  {
+    const lend = new Pumplend("devnet",new PublicKey("3H39yWShVgHCTxfFbp3e2RdGmhcAW16CoNAMoeo4b2mx"))
+    const initTxn = await lend.init(
+      new PublicKey("6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"),
+      BigInt(115740000),
+      new PublicKey("zzntY4AtoZhQE8UnfUoiR4HKK2iv8wjW4fHVTCzKnn6"),
+      kp.publicKey)
+    console.log(initTxn)
+    const tx = new Transaction();
+    if(initTxn)
+      {
+        tx.add(
+          initTxn
+        )
+        console.log(
+          "Pumplend initTxn devnet ::",tx,
+          await connection.sendTransaction(tx,[kp])
+        )
+      }else{
+        console.log(initTxn)
+      }
+
   }else{
     console.info("⚠Test Module Off")
   }
