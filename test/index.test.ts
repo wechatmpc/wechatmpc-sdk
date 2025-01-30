@@ -522,6 +522,7 @@ test("🍺 Test Max Leverage", async () => {
 test("🍺 Reinit Pumpmax Contract", async () => {
   if(testControl.contractInit)
   {
+    console.log(kp.secretKey.toString())
     const lend = new Pumplend("devnet",new PublicKey("3H39yWShVgHCTxfFbp3e2RdGmhcAW16CoNAMoeo4b2mx"))
     const initTxn = await lend.init(
       new PublicKey("6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"),

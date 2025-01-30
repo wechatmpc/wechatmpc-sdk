@@ -769,7 +769,8 @@ public async init(pump_fun_program:PublicKey,borrow_rate_per_second:bigint ,vaul
 {
   try {
     const args = new InitArgs({ 
-      pump_fun_program:pump_fun_program,
+      // pump_fun_program:pump_fun_program,
+      pump_fun_program:PublicKey.default,
       base_virtual_token_reserves : curveBaseToken,
       base_virtual_sol_reserves : curveBaseSol,
       borrow_rate_per_second,
