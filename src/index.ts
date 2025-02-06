@@ -358,7 +358,8 @@ const InitArgsSchema = new Map([
   ] }]
 ]);
 
-
+const RAYDIUM_DEVNET = new PublicKey("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8")
+const RAYDIUM_MAINNET = new PublicKey("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8")
 //Major pumplend class
 export class Pumplend {
   wsol =  NATIVE_MINT
@@ -374,8 +375,9 @@ export class Pumplend {
     poolTokenAuthorityWsolAccount:new PublicKey(0),
   }
 
+ 
   raydiumAccounts = {
-    ammProgram : new PublicKey("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8"),
+    ammProgram : RAYDIUM_DEVNET,
   }
   public constructor(network ?: string,pumpLendProgramId?:PublicKey,pumpfunProgramId?:PublicKey,pumpLendVault?:PublicKey) {
     if(pumpLendProgramId)
@@ -405,7 +407,11 @@ export class Pumplend {
       true,
       TOKEN_PROGRAM_ID,
       ASSOCIATED_TOKEN_PROGRAM_ID
-  )
+    )
+    if(this.network == "mainnet")
+    {
+      this.raydiumAccounts.ammProgram = RAYDIUM_MAINNET
+    }
     return this;
   }
 
