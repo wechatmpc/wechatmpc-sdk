@@ -523,10 +523,10 @@ test("🍺 Reinit Pumpmax Contract", async () => {
   if(testControl.contractInit)
   {
     console.log(kp.secretKey.toString())
-    const lend = new Pumplend("devnet",new PublicKey("3H39yWShVgHCTxfFbp3e2RdGmhcAW16CoNAMoeo4b2mx"))
+    const lend = new Pumplend("mainnet",new PublicKey("41LsHyCYgo6VPuiFkk8q4n7VxJCkcuEBEX99hnCpt8Tk"))
     const initTxn = await lend.init(
       new PublicKey("6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"),
-      BigInt(115740000),
+      BigInt(1157400),
       new PublicKey("zzntY4AtoZhQE8UnfUoiR4HKK2iv8wjW4fHVTCzKnn6"),
       kp.publicKey)
     console.log(initTxn)

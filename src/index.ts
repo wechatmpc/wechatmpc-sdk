@@ -360,11 +360,19 @@ const InitArgsSchema = new Map([
 
 const RAYDIUM_DEVNET = new PublicKey("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8")
 const RAYDIUM_MAINNET = new PublicKey("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8")
+
+const PUMPLEND_DEVNET = new PublicKey("3H39yWShVgHCTxfFbp3e2RdGmhcAW16CoNAMoeo4b2mx");
+const PUMPLEND_MAINNET = new PublicKey("41LsHyCYgo6VPuiFkk8q4n7VxJCkcuEBEX99hnCpt8Tk");
+
+const PUMPLEND_VAULT_DEVNET = new PublicKey("3H39yWShVgHCTxfFbp3e2RdGmhcAW16CoNAMoeo4b2mx");
+const PUMPLEND_VAULT_MAINNET = new PublicKey("41LsHyCYgo6VPuiFkk8q4n7VxJCkcuEBEX99hnCpt8Tk");
+
 //Major pumplend class
 export class Pumplend {
   wsol =  NATIVE_MINT
-  pumpLendProgramId = new PublicKey("3H39yWShVgHCTxfFbp3e2RdGmhcAW16CoNAMoeo4b2mx");
-  pumpLendVault = new PublicKey("zzntY4AtoZhQE8UnfUoiR4HKK2iv8wjW4fHVTCzKnn6")
+  //Mainnet :: 41LsHyCYgo6VPuiFkk8q4n7VxJCkcuEBEX99hnCpt8Tk
+  pumpLendProgramId =PUMPLEND_DEVNET
+  pumpLendVault = PUMPLEND_VAULT_DEVNET
   pumpfunProgramId = new PublicKey("6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P");
   network = "mainnet"
 
@@ -411,6 +419,8 @@ export class Pumplend {
     if(this.network == "mainnet")
     {
       this.raydiumAccounts.ammProgram = RAYDIUM_MAINNET
+      this.pumpLendProgramId =PUMPLEND_MAINNET
+      this.pumpLendVault = PUMPLEND_VAULT_MAINNET
     }
     return this;
   }
@@ -775,8 +785,8 @@ public async init(pump_fun_program:PublicKey,borrow_rate_per_second:bigint ,vaul
 {
   try {
     const args = new InitArgs({ 
-      // pump_fun_program:pump_fun_program,
-      pump_fun_program:PublicKey.default,
+      pump_fun_program:pump_fun_program,
+      // pump_fun_program:PublicKey.default,
       base_virtual_token_reserves : curveBaseToken,
       base_virtual_sol_reserves : curveBaseSol,
       borrow_rate_per_second,
