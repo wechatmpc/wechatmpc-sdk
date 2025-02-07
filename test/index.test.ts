@@ -58,6 +58,8 @@ const testControl = {
   pumplendMaxBorrowCul:false,
   pumplendMaxLeverageCul:false,
   contractInit:false,
+  updateVault:false,
+  updateFeeRate:false,
 }
 
 

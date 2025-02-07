@@ -358,6 +358,23 @@ const InitArgsSchema = new Map([
   ] }]
 ]);
 
+class AddressArgs extends Struct {
+
+  target_address: Uint8Array;
+  
+  constructor(fields: {   
+    target_address: PublicKey,
+   }) {
+      super(fields);
+      this.target_address = fields.target_address.toBuffer();
+  }
+}
+const AddressArgsSchema = new Map([
+  [AddressArgs, { kind: "struct", fields: [
+    ["target_address", [32]],
+  ] }]
+]);
+
 const RAYDIUM_DEVNET = new PublicKey("HWy1jotHpo6UqeQxx49dpYYdQB8wj9Qk9MdxwjLvDHB8")
 const RAYDIUM_MAINNET = new PublicKey("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8")
 
@@ -365,7 +382,7 @@ const PUMPLEND_DEVNET = new PublicKey("3H39yWShVgHCTxfFbp3e2RdGmhcAW16CoNAMoeo4b
 const PUMPLEND_MAINNET = new PublicKey("41LsHyCYgo6VPuiFkk8q4n7VxJCkcuEBEX99hnCpt8Tk");
 
 const PUMPLEND_VAULT_DEVNET = new PublicKey("3H39yWShVgHCTxfFbp3e2RdGmhcAW16CoNAMoeo4b2mx");
-const PUMPLEND_VAULT_MAINNET = new PublicKey("41LsHyCYgo6VPuiFkk8q4n7VxJCkcuEBEX99hnCpt8Tk");
+const PUMPLEND_VAULT_MAINNET = new PublicKey("zzntY4AtoZhQE8UnfUoiR4HKK2iv8wjW4fHVTCzKnn6");
 
 //Major pumplend class
 export class Pumplend {
@@ -808,6 +825,76 @@ public async init(pump_fun_program:PublicKey,borrow_rate_per_second:bigint ,vaul
               { pubkey: user, isSigner: true, isWritable: true },
               // { pubkey: baseInfo.poolTokenAuthority, isSigner: false, isWritable: true },
               { pubkey: baseInfo.systemConfig, isSigner: false, isWritable: true },
+              { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }
+            ],
+          programId: this.pumpLendProgramId,
+          data: data
+      });
+
+      const transaction = new Transaction().add(instruction);
+      transaction.feePayer = user;
+
+      return transaction;
+
+      
+      } catch (err: any) {
+        console.error('Error fetching system config data:', err);
+        return false;
+      }
+}
+
+public async updateVault(vault_address:PublicKey,user:PublicKey)
+{
+  try {
+    const args = new AddressArgs({ 
+      target_address:vault_address
+     });
+    const initBuffer = serialize(AddressArgsSchema, args);
+
+      const data = Buffer.concat(
+          [
+              new Uint8Array(sighash("global","update_vault_address")),
+              initBuffer
+          ]
+      )
+        const instruction = new TransactionInstruction({
+          keys: [
+              { pubkey: user, isSigner: true, isWritable: true },
+              { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }
+            ],
+          programId: this.pumpLendProgramId,
+          data: data
+      });
+
+      const transaction = new Transaction().add(instruction);
+      transaction.feePayer = user;
+
+      return transaction;
+
+      
+      } catch (err: any) {
+        console.error('Error fetching system config data:', err);
+        return false;
+      }
+}
+
+public async updateBorrowRate(rate:bigint,user:PublicKey)
+{
+  try {
+    const args = new BaseArgs({ 
+      amount:rate
+     });
+    const initBuffer = serialize(BaseArgsSchema, args);
+
+    const data = Buffer.concat(
+          [
+              new Uint8Array(sighash("global","update_borrow_rate_per_second")),
+              initBuffer
+          ]
+      )
+        const instruction = new TransactionInstruction({
+          keys: [
+              { pubkey: user, isSigner: true, isWritable: true },
               { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }
             ],
           programId: this.pumpLendProgramId,
