@@ -25,6 +25,7 @@ getAccount,
 createAssociatedTokenAccountInstruction
 
 } from "@solana/spl-token";
+import { getDefaultPool  , addressFetch}from "@pumplend/raydium-js-sdk"
 
 import * as dotenv from 'dotenv';
 dotenv.config();
@@ -102,6 +103,21 @@ test("🍺 Test Data Fetch", async () => {
 
       "Position Liquite & Interest ::",lend.pumplend_estimate_interest(
         borrowData
+      )
+    )
+
+    const mainnetLend = new Pumplend("mainnet");
+    console.log("curve :: ",
+      await mainnetLend.tryGetPumpTokenCurveData(mainnet,new PublicKey("GJAFwWjJ3vnTsrQVabjBVK2TYB1YtRCQXRDfDgUnpump"))
+    )
+
+    console.log(
+      "userBorrowData",
+      await mainnetLend.tryGetUserBorrowData(
+        mainnet,
+        new PublicKey("GJAFwWjJ3vnTsrQVabjBVK2TYB1YtRCQXRDfDgUnpump"),
+        new PublicKey("Ge3vpViqwz4fvx2EAZPsAfvUiwh7PajvTsZtKW33nMmE"),
+
       )
     )
 
@@ -500,12 +516,49 @@ test("🍺 Test Max Borrow", async () => {
 test("🍺 Test Max Leverage", async () => {
   if(testControl.pumplendMaxLeverageCul)
   {
-    const lend = new Pumplend("devnet")
+    // const lend = new Pumplend("devnet")
+    const lend = new Pumplend("mainnet")
+    //Check if token exsit on raydium 
+    const mt = new PublicKey("BSqMUYb6ePwKsby85zrXaDa4SNf6AgZ9YfA2c4mZpump")
+    let curve = await lend.tryGetPumpTokenCurveData(mainnet,mt)
+    console.log(curve)
+    if(curve && curve.complete == BigInt(1))
+    {
+        const pools = await getDefaultPool(mt,PublicKey.default,"mainnet")
+        console.log("pools ::",pools)
+        if(pools)
+        {
+          const pool = JSON.parse(
+            JSON.stringify(
+              pools
+            )
+          )
+            curve = {
+              virtualTokenReserves: BigInt(
+                Math.floor(Number(pool.mintAmountB)*(Math.pow(10,6)))
+              ),
+              virtualSolReserves:BigInt(
+                Math.floor(Number(pool.mintAmountA)*(Math.pow(10,9)))
+              ),
+              realTokenReserves: BigInt(
+                Math.floor(Number(pool.mintAmountB)*(Math.pow(10,6)))
+              ),
+              realSolReserves: BigInt(0),
+              tokenTotalSupply:BigInt(0),
+              complete: BigInt(1),
+            }
+        }
+    }else{
+      //Do nothing , curve  works fine
+    }
+
     // const borrowData =  await lend.tryGetUserBorrowData(connection,devnetToken,kp.publicKey);
+
     // const curve = await lend.tryGetPumpTokenCurveData(connection,devnetToken)
     // console.log("CurveData :: ",curve)
     const borrowData =  {};
-    const curve = {}
+    // const curve = {}
+
     console.log("borrowData",borrowData,curve)
     console.log(
       "Max Leverage ::",lend.pumplend_culcuate_max_leverage(
@@ -514,6 +567,16 @@ test("🍺 Test Max Leverage", async () => {
         10*1e9
         ,
         curve
+      )
+    )
+
+    console.log(
+      "Try do that in once ::",
+      await lend.pumplend_culcuate_max_leverageable(
+        mainnet,
+        mt,
+        kp.publicKey,
+        10*1e9
       )
     )
   }else{

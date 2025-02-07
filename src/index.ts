@@ -31,21 +31,12 @@ createAssociatedTokenAccountInstruction,
 NATIVE_MINT
 
 } from "@solana/spl-token";
-import {
-  LIQUIDITY_STATE_LAYOUT_V4,
-  Liquidity,
-  LiquidityPoolKeysV4,
-  MARKET_STATE_LAYOUT_V3,
-  Market,
-  SPL_MINT_LAYOUT,
-  DEVNET_PROGRAM_ID
-} from '@raydium-io/raydium-sdk'
 import { createHash } from 'crypto';
 import { serialize } from "borsh";
 
 // @ts-ignore
 import BN from 'bn.js';
-import { example  , addressFetch}from "@pumplend/raydium-js-sdk"
+import { getDefaultPool  , addressFetch}from "@pumplend/raydium-js-sdk"
 //Setting 
 const curveBaseToken = BigInt('1073000000000000')
 const curveBaseSol = BigInt('30000000000')
@@ -791,6 +782,7 @@ public tryGetPumpTokenDataAccount(token:PublicKey)
       complete
     }
   } catch (err: any) {
+    console.error(err)
       return false;
   }
 }
@@ -1667,7 +1659,7 @@ public pumplend_culcuate_max_leverage(userBorrowDataDetails:any,amount:number,cu
       }
     }
 
-    if(!curve || !curve?.virtualSolReserves || !curve?.virtualTokenReserves)
+    if(!curve || (!curve?.virtualSolReserves && curve?.virtualSolReserves!=0) || (!curve?.virtualTokenReserves && curve?.virtualTokenReserves!=0))
       {
         curve = {
           solReserves:curveBaseSol,
@@ -1733,6 +1725,46 @@ public pumplend_culcuate_max_leverage(userBorrowDataDetails:any,amount:number,cu
   //   BigInt(amount*0.1)
   // )
   return dToken;
+}
+
+public async pumplend_culcuate_max_leverageable(connection:Connection,token:PublicKey ,user:PublicKey, amount:number)
+{
+  let curve = await this.tryGetPumpTokenCurveData(connection,token)
+  if(curve && curve.complete == BigInt(1))
+  {
+      const pools = await getDefaultPool(token,PublicKey.default,"mainnet")
+      if(pools)
+      {
+        const pool = JSON.parse(
+          JSON.stringify(
+            pools
+          )
+        )
+          curve = {
+            virtualTokenReserves: BigInt(
+              Math.floor(Number(pool.mintAmountB)*(Math.pow(10,6)))
+            ),
+            virtualSolReserves:BigInt(
+              Math.floor(Number(pool.mintAmountA)*(Math.pow(10,9)))
+            ),
+            realTokenReserves: BigInt(
+              Math.floor(Number(pool.mintAmountB)*(Math.pow(10,6)))
+            ),
+            realSolReserves: BigInt(0),
+            tokenTotalSupply:BigInt(0),
+            complete: BigInt(1),
+          }
+      }
+  }else{
+    //Do nothing , curve  works fine
+  }
+  return this.pumplend_culcuate_max_leverage(
+    await this.tryGetUserBorrowData(connection,token,user)
+   ,
+    amount
+    ,
+    curve
+  )
 }
 
 public pumplend_estimate_interest(userBorrowDataDetails:any,interestRate?:number )
