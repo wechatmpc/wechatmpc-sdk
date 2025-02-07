@@ -372,8 +372,8 @@ const RAYDIUM_MAINNET = new PublicKey("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1
 const PUMPLEND_DEVNET = new PublicKey("3H39yWShVgHCTxfFbp3e2RdGmhcAW16CoNAMoeo4b2mx");
 const PUMPLEND_MAINNET = new PublicKey("41LsHyCYgo6VPuiFkk8q4n7VxJCkcuEBEX99hnCpt8Tk");
 
-const PUMPLEND_VAULT_DEVNET = new PublicKey("3H39yWShVgHCTxfFbp3e2RdGmhcAW16CoNAMoeo4b2mx");
-const PUMPLEND_VAULT_MAINNET = new PublicKey("zzntY4AtoZhQE8UnfUoiR4HKK2iv8wjW4fHVTCzKnn6");
+const PUMPLEND_VAULT_DEVNET = new PublicKey("zzntY4AtoZhQE8UnfUoiR4HKK2iv8wjW4fHVTCzKnn6");
+const PUMPLEND_VAULT_MAINNET = new PublicKey("FVRXRzHXtG1UDdrVfLPoSTKD44cwx99XKoWAqcQqeNb");
 
 //Major pumplend class
 export class Pumplend {
@@ -396,6 +396,16 @@ export class Pumplend {
     ammProgram : RAYDIUM_DEVNET,
   }
   public constructor(network ?: string,pumpLendProgramId?:PublicKey,pumpfunProgramId?:PublicKey,pumpLendVault?:PublicKey) {
+    if(network)
+      {
+        this.network = network;
+      }
+    if(this.network == "mainnet")
+      {
+        this.raydiumAccounts.ammProgram = RAYDIUM_MAINNET
+        this.pumpLendProgramId =PUMPLEND_MAINNET
+        this.pumpLendVault = PUMPLEND_VAULT_MAINNET
+      }
     if(pumpLendProgramId)
     {
       this.pumpLendProgramId = pumpLendProgramId
@@ -409,10 +419,7 @@ export class Pumplend {
     {
       this.pumpLendVault = pumpLendVault
     }
-    if(network)
-    {
-      this.network = network;
-    }
+
     const accs = this.tryGetSystemAccounts()
     this.systemAccounts.systemConfig = accs.systemConfig;
     this.systemAccounts.poolStakingData = accs.poolStakingData;
@@ -424,12 +431,7 @@ export class Pumplend {
       TOKEN_PROGRAM_ID,
       ASSOCIATED_TOKEN_PROGRAM_ID
     )
-    if(this.network == "mainnet")
-    {
-      this.raydiumAccounts.ammProgram = RAYDIUM_MAINNET
-      this.pumpLendProgramId =PUMPLEND_MAINNET
-      this.pumpLendVault = PUMPLEND_VAULT_MAINNET
-    }
+
     return this;
   }
 
