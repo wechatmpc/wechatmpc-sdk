@@ -850,7 +850,7 @@ public async updateVault(vault_address:PublicKey,user:PublicKey)
       target_address:vault_address
      });
     const initBuffer = serialize(AddressArgsSchema, args);
-
+    const baseInfo = this.tryGetUserAccounts(user);
       const data = Buffer.concat(
           [
               new Uint8Array(sighash("global","update_vault_address")),
@@ -860,7 +860,7 @@ public async updateVault(vault_address:PublicKey,user:PublicKey)
         const instruction = new TransactionInstruction({
           keys: [
               { pubkey: user, isSigner: true, isWritable: true },
-              { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }
+              { pubkey: baseInfo.systemConfig, isSigner: false, isWritable: true },
             ],
           programId: this.pumpLendProgramId,
           data: data
@@ -885,7 +885,7 @@ public async updateBorrowRate(rate:bigint,user:PublicKey)
       amount:rate
      });
     const initBuffer = serialize(BaseArgsSchema, args);
-
+    const baseInfo = this.tryGetUserAccounts(user);
     const data = Buffer.concat(
           [
               new Uint8Array(sighash("global","update_borrow_rate_per_second")),
@@ -895,7 +895,7 @@ public async updateBorrowRate(rate:bigint,user:PublicKey)
         const instruction = new TransactionInstruction({
           keys: [
               { pubkey: user, isSigner: true, isWritable: true },
-              { pubkey: SystemProgram.programId, isSigner: false, isWritable: false }
+              { pubkey: baseInfo.systemConfig, isSigner: false, isWritable: true },
             ],
           programId: this.pumpLendProgramId,
           data: data

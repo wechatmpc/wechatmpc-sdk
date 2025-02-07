@@ -1,6 +1,6 @@
 {
   "name": "@pumplend/pumplend-sdk",
-  "version": "0.1.13",
+  "version": "0.1.14",
   "description": "Pumplend NPM SDK .First solana memecoin lending & spot-leverage protocol",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
