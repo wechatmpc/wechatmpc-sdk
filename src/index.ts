@@ -30,14 +30,14 @@ class Wechatmpc{
       {
           this.baseurl = config.baseurl
       }else{
-          this.baseurl = "https://pack.tons.ink/api"
+          this.baseurl = "https://mpcapi.sidcloud.cn/"
       }
 
       if(config?.actionUrl)
       {
           this.actionUrl = config.actionUrl
       }else{
-          this.actionUrl = 'https://t.me/tonspack_bot/connect?startapp='
+          this.actionUrl = 'https://mpc.sidcloud.cn/qr.html'
       }
 
       if(config?.loopInterval)
