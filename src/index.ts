@@ -31,14 +31,14 @@ class Wechatmpc{
       {
           this.baseurl = config.baseurl
       }else{
-          this.baseurl = "https://mpcapi.sidcloud.cn/"
+          this.baseurl = "https://mpcapi.sidcloud.cn"
       }
 
       if(config?.actionUrl)
       {
           this.actionUrl = config.actionUrl
       }else{
-          this.actionUrl = 'https://mpc.sidcloud.cn/qr.html'
+          this.actionUrl = 'https://mpc.sidcloud.cn/qr.html?token='
       }
 
       if(config?.loopInterval)
@@ -152,6 +152,7 @@ class Wechatmpc{
                       r:redirect || null,
                       k:Buffer.from(this.encryptionKp.publicKey).toString("base64") // Add public Key to do msg reply encryption
                   }
+      // console.log(this.actionUrl+bs58.encode(Buffer.from(JSON.stringify(d))));
       window.open(this.actionUrl+bs58.encode(Buffer.from(JSON.stringify(d))),"newwindow","height=800, width=400, toolbar=no, menubar=no, scrollbars=no, resizable=no, location=no, status=no");
       return await this.loopCheck()
   }

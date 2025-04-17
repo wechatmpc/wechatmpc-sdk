@@ -8,9 +8,15 @@ const testControl = {
 test("🍺 Test Wechat Mpc", async () => {
   if(testControl.connectWallet)
   {
+    const mpc = new Wechatmpc()
     console.log(
-      new Wechatmpc()
+      mpc
     )
+    // console.log(
+    //   await mpc.connect(
+    //     {t:1,i:1}
+    //     ,"")
+    // )
   }else{
     console.info("⚠Test Module Off")
   }

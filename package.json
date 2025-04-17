@@ -1,6 +1,6 @@
 {
   "name": "wechatmpc-sdk",
-  "version": "0.0.2",
+  "version": "0.0.4",
   "description": "SDK for wechat mpc signature controller .",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
