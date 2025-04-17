@@ -1,6 +1,6 @@
 {
-  "name": "@carzygod/wechatmpc-sdk",
-  "version": "0.0.1",
+  "name": "wechatmpc-sdk",
+  "version": "0.0.2",
   "description": "SDK for wechat mpc signature controller .",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -17,6 +17,7 @@
     "bn.js": "^5.2.1",
     "borsh": "^0.7.0",
     "bs58": "^6.0.0",
+    "buffer": "^6.0.3",
     "buffer-layout": "^1.2.2",
     "dotenv": "^16.4.7",
     "libsodium": "^0.7.11",
