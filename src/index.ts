@@ -59,18 +59,18 @@ class Wechatmpc{
 
   encode(pubKey:any, msg:any) {
     try{
-      let ephemKeys = nacl.box.keyPair()
-      let msgArr = Buffer.from(msg)
-      let nonce = nacl.randomBytes(nacl.box.nonceLength)
-      let encrypted = nacl.box(
+      const ephemKeys = nacl.box.keyPair()
+      const msgArr = Buffer.from(msg)
+      const nonce = nacl.randomBytes(nacl.box.nonceLength)
+      const encrypted = nacl.box(
           msgArr,
           nonce,
           pubKey,
           ephemKeys.secretKey
       )
-      let nonce64 = Buffer.from(nonce).toString("base64")
-      let pubKey64 = Buffer.from(ephemKeys.publicKey).toString("base64")
-      let encrypted64 = Buffer.from(encrypted).toString("base64")
+      const nonce64 = Buffer.from(nonce).toString("base64")
+      const pubKey64 = Buffer.from(ephemKeys.publicKey).toString("base64")
+      const encrypted64 = Buffer.from(encrypted).toString("base64")
       return {nonce: nonce64, ephemPubKey: pubKey64, encrypted: encrypted64}
     }catch(e)
     {
@@ -94,13 +94,13 @@ class Wechatmpc{
     }
   }
   async loopCheck() {
-      for(var i = 0 ; i < this.loopTimeout ; i++)
+      for(let i = 0 ; i < this.loopTimeout ; i++)
       {
           const ret = await this.check_request_action()
           if(ret?.data)
           {
             try{
-              let retJson = JSON.parse(ret.data)
+              const retJson = JSON.parse(ret.data)
               {
                 if(retJson?.nonce && retJson?.ephemPubKey && retJson?.encrypted)
                 {
@@ -156,7 +156,7 @@ class Wechatmpc{
   }
 
   async sign(chian:any,sign:any,redirect:any,preconnect:any) {
-      var d:any=  {
+      let d:any=  {
                       t:1,
                       i:this.uuid, 
                       d:sign, 
@@ -166,9 +166,9 @@ class Wechatmpc{
                   }
       if(preconnect)
       {
-          var hd = new Headers();
+        const hd = new Headers();
           hd.append("Content-Type", "application/json");
-          var op = {
+          const op = {
             method: 'POST',
             headers:hd,
             body: JSON.stringify({"data":bs58.encode(Buffer.from(JSON.stringify(d)))}),
@@ -185,7 +185,7 @@ class Wechatmpc{
   }
 
   async send(chian:any,txs:any,redirect:any,preconnect:any) {
-      var d:any=  {
+      let d:any=  {
                       t:2,
                       i:this.uuid, 
                       d:txs, 
@@ -195,9 +195,9 @@ class Wechatmpc{
                   }
       if(preconnect)
       {
-          var hd = new Headers();
+          const hd = new Headers();
           hd.append("Content-Type", "application/json");
-          var op = {
+          const op = {
             method: 'POST',
             headers:hd,
             body: JSON.stringify({"data":bs58.encode(Buffer.from(JSON.stringify(d)))}),
